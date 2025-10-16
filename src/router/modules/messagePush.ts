@@ -1,11 +1,11 @@
 import { RouteRecordRaw } from 'vue-router';
 import { Layout } from '@/router/constant';
 import { BorderOuterOutlined } from '@vicons/antd';
-import { renderIcon } from '@/utils/index';
+import { renderIcon } from '@/utils';
 
 const routes: Array<RouteRecordRaw> = [
   {
-    path: '/messagepush',
+    path: '/messagePush',
     name: 'messagepush',
     component: Layout,
     meta: {
@@ -22,7 +22,7 @@ const routes: Array<RouteRecordRaw> = [
           title: '消息推送',
           activeMenu: 'messagepush_index',
         },
-        component: () => import('@/views/MessagePush/index.vue'),
+        component: () => import('@/views/messagePush/index.vue'),
       },
     ],
   },

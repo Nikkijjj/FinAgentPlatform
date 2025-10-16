@@ -7,7 +7,9 @@
     :date-locale="dateZhCN"
   >
     <AppProvider>
-      <RouterView />
+      <Suspense>
+        <RouterView />
+      </Suspense>
     </AppProvider>
   </NConfigProvider>
 

@@ -21,7 +21,7 @@
         <n-card class="message-card">
           <template #header>
             <div class="header">
-              <span class="header-label">{{ item.title }}</span>
+              <span class="header-label">{{ extractTruncatedTitle(item.content) }}</span>
             </div>
           </template>
 
@@ -37,7 +37,7 @@
               </n-icon>
               <div>
                 <div class="card-label">发布时间</div>
-                <span class="card-value">{{ item.publishTime || '未设置' }}</span>
+                <span class="card-value">{{ item.time || '未设置' }}</span>
               </div>
             </div>
             <div class="info-item">
@@ -45,13 +45,13 @@
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16">
                   <path
                     fill="currentColor"
-                    d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                    d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"
                   />
                 </svg>
               </n-icon>
               <div>
-                <div class="card-label">发布方</div>
-                <span class="card-value">{{ item.publisher || '未知' }}</span>
+                <div class="card-label">消息内容</div>
+                <span class="card-value">{{ truncateContent(item.content) }}</span>
               </div>
             </div>
           </div>
@@ -102,6 +102,7 @@
     :style="{
       width: '800px',
       maxWidth: '90vw',
+      height: '600px',
     }"
     class="fixed-dialog"
   >
@@ -115,6 +116,11 @@
   import { ref, computed, onMounted } from 'vue';
   import { NCard, NGrid, NPagination, NButton, NIcon, NModal, NDatePicker, NSpace } from 'naive-ui';
   import { marked } from 'marked';
+  import {
+    extractTruncatedTitle,
+    mockApiResponse,
+    truncateContent,
+  } from '@/api/messagePush/message';
 
   // 配置 marked 选项
   marked.setOptions({
@@ -122,174 +128,11 @@
     gfm: true,
   });
 
+  //请求数据
+  const response = await mockApiResponse();
+
   // 原始数据
-  const originalMessages = ref([
-    {
-      title: '项目A发布',
-      publishTime: '2025-10-10',
-      publisher: '发布方A',
-      status: '1',
-      description: '这是一个重要的项目发布，涉及多个技术栈和团队协作。',
-      content: `# 项目A详细信息
-  
-## 项目概述
-项目A是一个基于现代Web技术的企业级应用，旨在提高工作效率和团队协作。
-
-## 技术栈
-- **前端**: Vue 3 + TypeScript + Naive UI
-- **后端**: Node.js + Express
-- **数据库**: MongoDB
-- **部署**: Docker + Kubernetes
-
-## 主要功能
-1. 用户管理
-2. 项目管理
-3. 实时协作
-4. 数据分析
-
-## 项目周期
-- **开始时间**: 2025-01-15
-- **预计完成**: 2025-12-30
-- **当前进度**: 75%
-
-## 团队成员
-- 项目经理: 张三
-- 前端开发: 李四
-- 后端开发: 王五
-- UI设计: 赵六`,
-    },
-    {
-      title: '项目B发布',
-      publishTime: '2025-10-08',
-      publisher: '发布方B',
-      status: '0',
-      description: '这是一个创新性的技术项目，采用了最新的开发模式。',
-      content: `# 项目B详细信息
-
-## 项目简介
-项目B专注于人工智能和机器学习的应用开发。
-
-## 核心特性
-- 智能推荐系统
-- 自然语言处理
-- 图像识别
-- 预测分析
-
-## 技术亮点
-- 使用TensorFlow进行模型训练
-- 采用微服务架构
-- 支持大规模数据处理
-- 实时推理能力
-
-## 应用场景
-1. 电商推荐
-2. 智能客服
-3. 内容审核
-4. 风险控制`,
-    },
-    {
-      title: '项目C发布',
-      publishTime: '2025-10-05',
-      publisher: '发布方C',
-      status: '1',
-      description: '移动端应用开发项目，支持多平台运行。',
-      content: `# 项目C详细信息
-
-## 项目背景
-开发一款跨平台的移动应用，满足现代用户的需求。
-
-## 平台支持
-- iOS
-- Android
-- Web
-- 微信小程序
-
-## 开发工具
-- React Native
-- TypeScript
-- Redux状态管理
-- Jest测试框架
-
-## 版本历史
-- v1.0: 基础功能 (2025-03-01)
-- v1.5: 性能优化 (2025-06-15)
-- v2.0: 新增功能 (2025-10-05)`,
-    },
-    {
-      title: '项目D发布',
-      publishTime: '2025-10-03',
-      publisher: '发布方D',
-      status: '0',
-      description: '后台管理系统项目，提供完整的数据管理解决方案。',
-      content: `# 项目D详细信息
-
-## 系统架构
-采用前后端分离的架构设计，确保系统的高可用性和可扩展性。
-
-## 功能模块
-- **用户管理**: 角色权限控制
-- **数据统计**: 可视化图表展示
-- **系统监控**: 实时性能监控
-- **日志管理**: 操作日志记录
-
-## 安全特性
-- JWT身份认证
-- 数据加密传输
-- 防SQL注入
-- XSS攻击防护`,
-    },
-    {
-      title: '项目E发布',
-      publishTime: '2025-10-01',
-      publisher: '发布方E',
-      status: '1',
-      description: '大数据分析平台，支持海量数据处理。',
-      content: `# 项目E详细信息
-
-## 平台能力
-- 日处理数据量: 10TB+
-- 实时数据处理延迟: < 1秒
-- 支持数据源: 20+种
-
-## 核心技术
-- Apache Spark
-- Apache Flink
-- Apache Kafka
-- Elasticsearch
-
-## 应用价值
-1. 业务决策支持
-2. 用户行为分析
-3. 市场趋势预测
-4. 风险预警`,
-    },
-    {
-      title: '项目F发布',
-      publishTime: '2025-09-28',
-      publisher: '发布方F',
-      status: '1',
-      description: '云原生应用部署平台，简化运维流程。',
-      content: `# 项目F详细信息
-
-## 平台特性
-- 一键部署
-- 自动扩缩容
-- 健康检查
-- 日志收集
-
-## 支持环境
-- 开发环境
-- 测试环境
-- 预生产环境
-- 生产环境
-
-## 集成工具
-- Jenkins CI/CD
-- Prometheus监控
-- Grafana仪表板
-- Alertmanager告警`,
-    },
-  ]);
+  const originalMessages = ref([...response.data]);
 
   // 响应式数据
   const messages = ref([...originalMessages.value]);
@@ -317,7 +160,7 @@
   const handleDateFilter = () => {
     if (!dateRange.value) {
       // 重置筛选
-      messages.value = [...originalMessages.value];
+      messages.value = originalMessages.value;
       currentPage.value = 1;
       return;
     }
@@ -327,11 +170,12 @@
     const [startTimestamp, endTimestamp] = dateRange.value;
     const startDate = new Date(startTimestamp);
     const endDate = new Date(endTimestamp);
+    endDate.setHours(23, 59, 59);
     console.log('Date转换后的startDate:', startDate);
     console.log('Date转换后的endDate:', endDate);
 
     messages.value = originalMessages.value.filter((item) => {
-      const itemDate = new Date(item.publishTime);
+      const itemDate = new Date(item.time);
       return itemDate >= startDate && itemDate <= endDate;
     });
     currentPage.value = 1;
@@ -339,7 +183,7 @@
 
   const resetFilter = () => {
     dateRange.value = null;
-    messages.value = [...originalMessages.value];
+    messages.value = originalMessages.value;
     currentPage.value = 1;
   };
 
@@ -525,8 +369,8 @@
   .dialog-content {
     flex: 1;
     overflow-y: auto;
-    max-height: calc(100% - 80px); /* 减去标题和按钮的高度 */
     padding-right: 8px; /* 为滚动条留出空间 */
+    height: 500px;
 
     /* 自定义滚动条样式 */
     &::-webkit-scrollbar {
@@ -546,6 +390,20 @@
         background: #a8a8a8;
       }
     }
+  }
+
+  .text-ellipsis {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    line-height: 1.5;
+
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-all;
   }
 </style>
 
