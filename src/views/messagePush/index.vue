@@ -391,20 +391,6 @@
       }
     }
   }
-
-  .text-ellipsis {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    line-height: 1.5;
-
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    word-break: break-all;
-  }
 </style>
 
 <style>
