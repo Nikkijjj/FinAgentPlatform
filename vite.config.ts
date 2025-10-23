@@ -47,7 +47,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
     },
     server: {
       host: true,
-      port: 5003,
+      port: 8000,
       proxy: {
         '/api': {
           target: 'http://8.130.110.113:5003',
