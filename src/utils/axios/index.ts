@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const request = axios.create({
-  baseURL: import.meta.env.VITE_GLOB_API_URL,
+  baseURL: '',
   timeout: 5000,
 });
 

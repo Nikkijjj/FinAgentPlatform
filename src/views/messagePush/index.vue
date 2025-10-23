@@ -21,7 +21,7 @@
         <n-card class="message-card">
           <template #header>
             <div class="header">
-              <span class="header-label">{{ extractTruncatedTitle(item.content) }}</span>
+              <span class="header-label">{{ extractTruncatedTitle(item.report) }}</span>
             </div>
           </template>
 
@@ -37,7 +37,7 @@
               </n-icon>
               <div>
                 <div class="card-label">发布时间</div>
-                <span class="card-value">{{ item.time || '未设置' }}</span>
+                <span class="card-value">{{ item.trade_date || '未设置' }}</span>
               </div>
             </div>
             <div class="info-item">
@@ -51,7 +51,7 @@
               </n-icon>
               <div>
                 <div class="card-label">消息内容</div>
-                <span class="card-value">{{ truncateContent(item.content) }}</span>
+                <span class="card-value">{{ truncateContent(item.report) }}</span>
               </div>
             </div>
           </div>
@@ -116,11 +116,7 @@
   import { ref, computed, onMounted } from 'vue';
   import { NCard, NGrid, NPagination, NButton, NIcon, NModal, NDatePicker, NSpace } from 'naive-ui';
   import { marked } from 'marked';
-  import {
-    extractTruncatedTitle,
-    mockApiResponse,
-    truncateContent,
-  } from '@/api/messagePush/message';
+  import { extractTruncatedTitle, fetchMessages, truncateContent } from '@/api/messagePush/message';
 
   // 配置 marked 选项
   marked.setOptions({
@@ -129,21 +125,20 @@
   });
 
   //请求数据
-  const response = await mockApiResponse();
+  const response = await fetchMessages(null, null, null);
+  const { current_data, pagination } = response.data;
 
   // 原始数据
-  const originalMessages = ref([...response.data]);
+  const originalMessages = ref([...current_data]);
 
   // 响应式数据
   const messages = ref([...originalMessages.value]);
   const dateRange = ref<[number, number] | null>(null);
   const currentPage = ref(1);
-  const pageSize = 6;
+  const pageSize = pagination.size;
   const showModal = ref(false);
   const currentItem = ref<any>(null);
-
-  // 计算属性
-  const totalPages = computed(() => Math.ceil(messages.value.length / pageSize));
+  const totalPages = pagination.pages;
 
   const filteredMessages = computed(() => {
     const startIndex = (currentPage.value - 1) * pageSize;
@@ -151,9 +146,11 @@
     return messages.value.slice(startIndex, endIndex);
   });
 
+  console.log('filteredMessages', filteredMessages);
+
   const renderedMarkdown = computed(() => {
     if (!currentItem.value) return '';
-    return marked(currentItem.value.content);
+    return marked(currentItem.value.report);
   });
 
   // 方法
@@ -175,7 +172,7 @@
     console.log('Date转换后的endDate:', endDate);
 
     messages.value = originalMessages.value.filter((item) => {
-      const itemDate = new Date(item.time);
+      const itemDate = new Date(item.trade_date);
       return itemDate >= startDate && itemDate <= endDate;
     });
     currentPage.value = 1;

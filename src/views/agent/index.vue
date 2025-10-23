@@ -64,6 +64,11 @@
           <div class="message-content">
             <div class="message-text">
               <pre v-if="message.isTemplate">{{ message.content }}</pre>
+              <div
+                v-else-if="message.type === 'ai-message'"
+                v-html="renderMarkdown(message.content)"
+                class="markdown-content"
+              ></div>
               <span v-else>{{ message.content }}</span>
             </div>
             <div class="message-actions">
@@ -81,6 +86,27 @@
             </div>
           </div>
         </div>
+
+        <!-- 加载状态 -->
+        <div v-if="isLoading" class="message ai-message">
+          <div class="message-avatar">
+            <n-avatar round size="small" :style="{ backgroundColor: '#4576F1' }">
+              <n-icon>
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path
+                    d="M20.5 14.5V16H19v-1.5h1.5zm-13 0H9V16H5.5v-1.5h2zM16 9c0-2.21-1.79-4-4-4S8 6.79 8 9s1.79 4 4 4 4-1.79 4-4zM3.5 18c0-3.5 6-5.5 9-5.5s9 2 9 5.5V20H3.5v-2z"
+                  />
+                </svg>
+              </n-icon>
+            </n-avatar>
+          </div>
+          <div class="message-content">
+            <div class="message-text">
+              <n-spin size="small" />
+              <span style="margin-left: 8px">AI正在思考中...</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 可调整大小的输入框区域 -->
@@ -95,12 +121,14 @@
             @keydown.enter.prevent="handleSendMessage"
             class="message-input"
             ref="inputRef"
+            :disabled="isLoading"
           />
           <n-button
             type="primary"
             class="send-button"
-            :disabled="!userInput"
+            :disabled="!userInput || isLoading"
             @click="handleSendMessage"
+            :loading="isLoading"
           >
             <template #icon>
               <n-icon>
@@ -140,11 +168,11 @@
 
         <n-card
           class="agent-card"
-          :class="{ active: activeAgent === 'news' }"
-          @click="selectAgent('news')"
+          :class="{ active: activeAgent === 'fundamental' }"
+          @click="selectAgent('fundamental')"
         >
           <div class="card-content">
-            <div class="card-icon news">
+            <div class="card-icon fundamental">
               <n-icon size="32">
                 <svg viewBox="0 0 24 24" fill="currentColor">
                   <path d="M14 12h1.5v5H14zm-3 2.5h1.5V17H11zm6-5h1.5v7.5H17z" />
@@ -154,8 +182,8 @@
                 </svg>
               </n-icon>
             </div>
-            <h3 class="card-title">News Agent</h3>
-            <p class="card-description">新闻摘要与内容分析</p>
+            <h3 class="card-title">Fundamental Agent</h3>
+            <p class="card-description">基本面分析与财务数据</p>
           </div>
         </n-card>
 
@@ -184,8 +212,10 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, nextTick, watch, onMounted, onUnmounted } from 'vue';
-  import { NButton, NInput, NCard, NIcon, NAvatar, useMessage } from 'naive-ui';
+  import { ref, nextTick, watch, onMounted } from 'vue';
+  import { NButton, NInput, NCard, NIcon, NAvatar, useMessage, NSpin } from 'naive-ui';
+  import { marked } from 'marked';
+  import DOMPurify from 'dompurify';
 
   const message = useMessage();
 
@@ -197,48 +227,94 @@
   const isResizing = ref<boolean>(false);
   const messagesContainer = ref<HTMLElement>();
   const inputRef = ref<any>();
+  const isLoading = ref<boolean>(false);
 
   // Agent提示词模板
   const agentTemplates = {
     market: `请分析以下市场情况并提供投资建议：
 
-  【市场领域】: [请在此处填写您关注的市场领域，如科技、医疗、能源等]
-  【时间范围】: [请在此处填写关注的时间范围，如近期、未来3个月、未来1年等]
-  【投资偏好】: [请在此处填写您的投资偏好，如稳健型、成长型、高风险高回报等]
-  【关注指标】: [请在此处填写您关注的指标，如市盈率、增长率、市场份额等]
+【股票代码】: [请在此处填写股票代码，如AAPL、TSLA、00700.HK、000001等 - 必需]
+【市场领域】: [请在此处填写您关注的市场领域，如科技、医疗、能源等]
+【时间范围】: [请在此处填写关注的时间范围，如近期、未来3个月、未来1年等]
+【投资偏好】: [请在此处填写您的投资偏好，如稳健型、成长型、高风险高回报等]
+【关注指标】: [请在此处填写您关注的指标，如市盈率、增长率、市场份额等]
 
-  请基于以上信息，提供详细的市场分析和投资建议。`,
+请基于以上信息，提供详细的市场分析和投资建议。`,
 
-    news: `请分析以下新闻内容并提供摘要：
+    fundamental: `请分析以下基本面情况并提供财务分析：
 
-  【新闻主题】: [请在此处填写新闻主题或关键词]
-  【时间范围】: [请在此处填写新闻时间范围，如最近一周、本月、特定日期等]
-  【关注角度】: [请在此处填写您关注的新闻角度，如政治影响、经济影响、社会影响等]
-  【信息来源】: [请在此处填写您希望分析的信息来源，如特定媒体、全部来源等]
+【股票代码】: [请在此处填写股票代码，如AAPL、TSLA、00700.HK、000001等 - 必需]
+【分析维度】: [请在此处填写分析维度，如财务健康度、盈利能力、成长性等]
+【时间范围】: [请在此处填写分析时间范围，如最近季度、年度、三年期等]
+【关注指标】: [请在此处填写您关注的财务指标，如营收、净利润、ROE、负债率等]
+【比较基准】: [请在此处填写比较基准，如同行业公司、市场平均等]
 
-  请基于以上信息，提供新闻摘要和深入分析。`,
+请基于以上信息，提供基本面分析和财务评估。`,
 
     media: `请协助创作或优化以下媒体内容：
 
-  【内容类型】: [请在此处填写内容类型，如文章、视频脚本、社交媒体帖子等]
-  【目标受众】: [请在此处填写目标受众，如年轻人、专业人士、特定兴趣群体等]
-  【核心信息】: [请在此处填写核心信息或关键点]
-  【风格要求】: [请在此处填写风格要求，如正式、轻松幽默、专业严谨等]
+【股票代码】: [请在此处填写股票代码，如AAPL、TSLA、00700.HK、000001等 - 必需]
+【内容类型】: [请在此处填写内容类型，如文章、视频脚本、社交媒体帖子等]
+【目标受众】: [请在此处填写目标受众，如年轻人、专业人士、特定兴趣群体等]
+【核心信息】: [请在此处填写核心信息或关键点]
+【风格要求】: [请在此处填写风格要求，如正式、轻松幽默、专业严谨等]
 
-  请基于以上信息，提供内容创作建议或优化方案。`,
+请基于以上信息，提供内容创作建议或优化方案。`,
+  };
+
+  // 配置marked选项
+  marked.setOptions({
+    breaks: true,
+    gfm: true,
+  });
+
+  // Markdown渲染函数
+  const renderMarkdown = (content: string): string => {
+    if (!content) return '';
+    const rawHtml = marked(content);
+    return DOMPurify.sanitize(rawHtml);
+  };
+
+  // 获取当前时间字符串
+  const getCurrentTimeString = (): string => {
+    const now = new Date();
+    return now.toISOString().split('T')[0]; // 返回 YYYY-MM-DD 格式
+  };
+
+  // 解析股票代码
+  const parseStockCode = (input: string): string => {
+    const stockCodeMatch = input.match(/【股票代码】:\s*([^\n\r\[\]]+)/);
+    if (stockCodeMatch && stockCodeMatch[1]) {
+      const code = stockCodeMatch[1].trim();
+
+      // 检查是否是占位符
+      if (code.includes('请在此处填写股票代码')) {
+        return '';
+      }
+
+      // 验证股票代码格式
+      if (isValidStockCode(code)) {
+        return code;
+      }
+    }
+    return '';
+  };
+
+  // 验证股票代码格式
+  const isValidStockCode = (code: string): boolean => {
+    // 1. 6位纯数字（A股代码）
+    const sixDigitPattern = /^\d{6}$/;
+
+    // 2. 字母数字组合（美股、港股等）
+    const alphaNumericPattern = /^[A-Za-z0-9.]{1,10}$/;
+
+    return sixDigitPattern.test(code) || alphaNumericPattern.test(code);
   };
 
   // 选择Agent
   const selectAgent = (agent: string) => {
     activeAgent.value = agent;
     userInput.value = agentTemplates[agent as keyof typeof agentTemplates];
-
-    // 添加模板消息到对话框
-    // messages.value.push({
-    //   type: 'ai-message',
-    //   content: agentTemplates[agent as keyof typeof agentTemplates],
-    //   isTemplate: true,
-    // });
 
     message.success(`已切换到${getAgentName(agent)}模式`);
 
@@ -255,15 +331,22 @@
   const getAgentName = (agent: string): string => {
     const names: Record<string, string> = {
       market: 'Market Agent',
-      news: 'News Agent',
+      fundamental: 'Fundamental Agent',
       media: 'Media Agent',
     };
     return names[agent] || 'Unknown Agent';
   };
 
   // 发送消息
-  const handleSendMessage = () => {
-    if (!userInput.value.trim()) return;
+  const handleSendMessage = async () => {
+    if (!userInput.value.trim() || isLoading.value) return;
+
+    // 解析股票代码
+    const stockCode = parseStockCode(userInput.value);
+    if (!stockCode) {
+      message.error('请填写有效的股票代码（6位数字或字母数字组合）');
+      return;
+    }
 
     // 添加用户消息
     messages.value.push({
@@ -273,48 +356,115 @@
 
     const currentInput = userInput.value;
     userInput.value = '';
+    isLoading.value = true;
 
-    // 模拟AI响应
-    setTimeout(() => {
+    try {
+      // 根据选择的Agent调用不同的后端接口
+      let response;
+      switch (activeAgent.value) {
+        case 'market':
+          response = await callMarketAgent(currentInput, stockCode);
+          break;
+        case 'fundamental':
+          response = await callFundamentalAgent(currentInput, stockCode);
+          break;
+        case 'media':
+          response = await callMediaAgent(currentInput, stockCode);
+          break;
+        default:
+          throw new Error('请先选择Agent类型');
+      }
+
+      // 添加AI响应消息
       messages.value.push({
         type: 'ai-message',
-        content: generateAIResponse(activeAgent.value, currentInput),
+        content: response,
       });
-      scrollToBottom();
-    }, 1000);
+    } catch (error) {
+      console.error('API调用失败:', error);
+      message.error('请求失败，请稍后重试');
 
-    scrollToBottom();
+      // 添加错误响应消息
+      messages.value.push({
+        type: 'ai-message',
+        content: '抱歉，服务暂时不可用，请稍后重试。',
+      });
+    } finally {
+      isLoading.value = false;
+      scrollToBottom();
+    }
   };
 
-  // 生成AI响应
-  const generateAIResponse = (agent: string, input: string): string => {
-    const responses: Record<string, string> = {
-      market: `基于您的市场查询，我分析了相关数据并得出以下结论：
-
-  1. 市场趋势：当前市场呈现稳定增长态势，特别是在您关注的领域有显著发展潜力。
-  2. 投资建议：考虑到您的投资偏好，建议关注具有稳定现金流和良好增长前景的资产。
-  3. 风险提示：请注意市场波动风险，建议分散投资以降低单一资产风险。
-
-  如需更详细的分析，请提供更具体的市场参数。`,
-
-      news: `根据您的新闻分析请求，我整理了以下要点：
-
-  1. 主要事件：相关主题的新闻主要集中在政策变化和行业动态方面。
-  2. 影响分析：这些发展可能对相关行业产生中长期影响，值得持续关注。
-  3. 趋势预测：基于当前信息，预计未来几周该主题将继续成为热点。
-
-  建议关注权威媒体获取最新动态和深度分析。`,
-
-      media: `针对您的媒体内容需求，我提供以下创作建议：
-
-  1. 内容结构：建议采用"问题-分析-解决方案"的逻辑框架，增强内容说服力。
-  2. 表达方式：根据目标受众特点，使用恰当的语言风格和表达方式。
-  3. 优化建议：增加具体案例和数据支持，提升内容的可信度和吸引力。
-
-  您可以根据这些建议进一步完善内容创作。`,
+  // 调用Market Agent API
+  const callMarketAgent = async (userMessage: string, stockCode: string): Promise<string> => {
+    const requestData = {
+      company_of_interest: stockCode,
+      trade_date: getCurrentTimeString(),
+      messages: [userMessage],
     };
 
-    return responses[agent] || '感谢您的查询！我将基于您提供的信息进行分析并给出专业建议。';
+    const response = await fetch('/api/market/get/report', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.data || '收到市场分析数据，正在生成报告...';
+  };
+
+  // 调用Fundamental Agent API
+  const callFundamentalAgent = async (userMessage: string, stockCode: string): Promise<string> => {
+    const requestData = {
+      company_of_interest: stockCode,
+      trade_date: getCurrentTimeString(),
+      messages: [userMessage],
+    };
+
+    const response = await fetch('/api/fundamentals/get/report', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: s${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.data || '收到基本面数据，正在生成分析报告...';
+  };
+
+  // 调用Media Agent API
+  const callMediaAgent = async (userMessage: string, stockCode: string): Promise<string> => {
+    const requestData = {
+      company_of_interest: stockCode,
+      trade_date: getCurrentTimeString(),
+      messages: [userMessage],
+    };
+
+    const response = await fetch('/api/social_media/get/report', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.data || '收到媒体数据，正在生成内容建议...';
   };
 
   // 删除消息
@@ -377,7 +527,8 @@
     // 初始示例消息
     messages.value.push({
       type: 'ai-message',
-      content: '您好！我是AI助手。请选择上方的Agent类型开始对话，或直接输入您的问题。',
+      content:
+        '您好！我是AI助手。请选择上方的Agent类型开始对话，记得在查询中填写股票代码（必需）。支持6位数字代码（如000001）或字母数字组合（如AAPL）。',
     });
   });
 </script>
@@ -495,6 +646,94 @@
           white-space: pre-wrap;
           font-family: inherit;
         }
+
+        .markdown-content {
+          line-height: 1.6;
+
+          h1,
+          h2,
+          h3,
+          h4,
+          h5,
+          h6 {
+            margin: 16px 0 8px 0;
+            font-weight: 600;
+          }
+
+          h1 {
+            font-size: 1.4em;
+          }
+          h2 {
+            font-size: 1.3em;
+          }
+          h3 {
+            font-size: 1.2em;
+          }
+          h4 {
+            font-size: 1.1em;
+          }
+
+          p {
+            margin: 8px 0;
+          }
+
+          ul,
+          ol {
+            margin: 8px 0;
+            padding-left: 24px;
+          }
+
+          li {
+            margin: 4px 0;
+          }
+
+          blockquote {
+            margin: 12px 0;
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border-left: 4px solid #4576f1;
+            border-radius: 4px;
+          }
+
+          code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9em;
+          }
+
+          pre code {
+            background: transparent;
+            padding: 0;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+          }
+
+          th,
+          td {
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            text-align: left;
+          }
+
+          th {
+            background: #f5f5f5;
+            font-weight: 600;
+          }
+
+          strong {
+            font-weight: 600;
+          }
+
+          em {
+            font-style: italic;
+          }
+        }
       }
 
       .message-actions {
@@ -610,7 +849,7 @@
           color: #10a37f;
         }
 
-        &.news {
+        &.fundamental {
           background: rgba(59, 130, 246, 0.1);
           color: #3b82f6;
         }

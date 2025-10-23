@@ -4,7 +4,6 @@ import { resolve } from 'path';
 import { wrapperEnv } from './build/utils';
 import { createVitePlugins } from './build/vite/plugin';
 import { OUTPUT_DIR } from './build/constant';
-import { createProxy } from './build/vite/proxy';
 import pkg from './package.json';
 import { format } from 'date-fns';
 const { dependencies, devDependencies, name, version } = pkg;
@@ -22,7 +21,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
   const root = process.cwd();
   const env = loadEnv(mode, root);
   const viteEnv = wrapperEnv(env);
-  const { VITE_PUBLIC_PATH, VITE_PORT, VITE_PROXY } = viteEnv;
+  const { VITE_PUBLIC_PATH } = viteEnv;
   const isBuild = command === 'build';
   return {
     base: VITE_PUBLIC_PATH,
@@ -48,8 +47,13 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
     },
     server: {
       host: true,
-      port: VITE_PORT,
-      proxy: createProxy(VITE_PROXY),
+      port: 5003,
+      proxy: {
+        '/api': {
+          target: 'http://8.130.110.113:5003',
+          changeOrigin: true,
+        },
+      },
     },
     optimizeDeps: {
       include: [],
