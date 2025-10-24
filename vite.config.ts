@@ -46,7 +46,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
     },
     server: {
-      host: '0.0.0.0',
+      host: '127.0.0.1',
       port: 8000,
       proxy: {
         '/api': {
