@@ -31,11 +31,11 @@ export interface MessageResponse {
  *  获取所有消息列表
  *  @returns type:MessageData[]
  */
-export const fetchMessages: (
+export const fetchMessages: (time, page_num, page_count) => Promise<MessageResponse> = async (
   time: [],
   page_num: number,
   page_count: number
-) => Promise<MessageResponse> = async (time: [], page_num: number, page_count: number) => {
+) => {
   try {
     const result = await request.post('/api/scheduler/list', {
       time: time,

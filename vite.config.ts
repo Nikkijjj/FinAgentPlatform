@@ -46,11 +46,12 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
     },
     server: {
-      host: '127.0.0.1',
+      host: true,
       port: 8000,
       proxy: {
         '/api': {
-          target: 'http://8.130.110.113:5003',
+          target: 'http://127.0.0.1:5003',
+          //target: 'http://8.130.110.113:5003',
           changeOrigin: true,
         },
       },
