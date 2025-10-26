@@ -35,22 +35,17 @@
       </div>
 
       <div class="chat-messages" ref="messagesContainer">
-        <div
-          v-for="(message, index) in messages"
-          :key="index"
-          class="message"
-          :class="message.type"
-        >
+        <div v-for="(m, index) in messages" :key="index" class="message" :class="m.type">
           <div class="message-avatar">
             <n-avatar
               round
               size="small"
-              :style="{ backgroundColor: message.type === 'ai-message' ? '#4576F1' : '#D5DCEE' }"
+              :style="{ backgroundColor: m.type === 'ai-message' ? '#4576F1' : '#D5DCEE' }"
             >
               <n-icon>
                 <svg viewBox="0 0 24 24" fill="currentColor">
                   <path
-                    v-if="message.type === 'ai-message'"
+                    v-if="m.type === 'ai-message'"
                     d="M20.5 14.5V16H19v-1.5h1.5zm-13 0H9V16H5.5v-1.5h2zM16 9c0-2.21-1.79-4-4-4S8 6.79 8 9s1.79 4 4 4 4-1.79 4-4zM3.5 18c0-3.5 6-5.5 9-5.5s9 2 9 5.5V20H3.5v-2z"
                   />
                   <path
@@ -63,13 +58,13 @@
           </div>
           <div class="message-content">
             <div class="message-text">
-              <pre v-if="message.isTemplate">{{ message.content }}</pre>
+              <pre v-if="m.isTemplate">{{ m.content }}</pre>
               <div
-                v-else-if="message.type === 'ai-message'"
-                v-html="renderMarkdown(message.content)"
+                v-else-if="m.type === 'ai-message'"
+                v-html="purifyMarkdown(renderMarkdown(m.content))"
                 class="markdown-content"
               ></div>
-              <span v-else>{{ message.content }}</span>
+              <span v-else>{{ m.content }}</span>
             </div>
             <div class="message-actions">
               <n-button text size="tiny" @click="deleteMessage(index)" class="delete-btn">
@@ -212,8 +207,8 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, nextTick, watch, onMounted } from 'vue';
-  import { NButton, NInput, NCard, NIcon, NAvatar, useMessage, NSpin } from 'naive-ui';
+  import { nextTick, onMounted, ref, watch } from 'vue';
+  import { NAvatar, NButton, NCard, NIcon, NInput, NSpin, useMessage } from 'naive-ui';
   import { marked } from 'marked';
   import DOMPurify from 'dompurify';
 
@@ -269,10 +264,14 @@
   });
 
   // Markdown渲染函数
-  const renderMarkdown = (content: string): string => {
+  const renderMarkdown = (content: string) => {
     if (!content) return '';
-    const rawHtml = marked(content);
-    return DOMPurify.sanitize(rawHtml);
+    return marked(content);
+  };
+
+  //渲染markdown
+  const purifyMarkdown = (markdown: string): string => {
+    return DOMPurify.sanitize(markdown);
   };
 
   // 获取当前时间字符串
@@ -488,7 +487,8 @@
   const scrollToBottom = () => {
     if (messagesContainer.value) {
       nextTick(() => {
-        messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+        if (messagesContainer.value)
+          messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
       });
     }
   };

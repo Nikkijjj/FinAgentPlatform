@@ -116,7 +116,12 @@
   import { ref, computed, onMounted } from 'vue';
   import { NCard, NGrid, NPagination, NButton, NIcon, NModal, NDatePicker, NSpace } from 'naive-ui';
   import { marked } from 'marked';
-  import { extractTruncatedTitle, fetchMessages, truncateContent } from '@/api/messagePush/message';
+  import {
+    extractTruncatedTitle,
+    fetchMessages,
+    MessageData,
+    truncateContent,
+  } from '@/api/messagePush/message';
 
   // 配置 marked 选项
   marked.setOptions({
@@ -124,29 +129,23 @@
     gfm: true,
   });
 
-  //请求数据
-  const response = await fetchMessages(null, null, null);
-  const { current_data, pagination } = response.data;
-
   // 原始数据
-  const originalMessages = ref([...current_data]);
+  const originalMessages = ref<MessageData[]>([]);
 
   // 响应式数据
-  const messages = ref([...originalMessages.value]);
+  const messages = ref<MessageData[]>([]);
+  let pageSize: number;
+  let totalPages: number;
   const dateRange = ref<[number, number] | null>(null);
   const currentPage = ref(1);
-  const pageSize = pagination.size;
   const showModal = ref(false);
   const currentItem = ref<any>(null);
-  const totalPages = pagination.pages;
 
   const filteredMessages = computed(() => {
     const startIndex = (currentPage.value - 1) * pageSize;
     const endIndex = startIndex + pageSize;
     return messages.value.slice(startIndex, endIndex);
   });
-
-  console.log('filteredMessages', filteredMessages);
 
   const renderedMarkdown = computed(() => {
     if (!currentItem.value) return '';
@@ -199,8 +198,13 @@
   };
 
   // 生命周期
-  onMounted(() => {
-    // 初始化代码
+  onMounted(async () => {
+    const response = await fetchMessages(null, null, null);
+    const { current_data, pagination } = response.data;
+    originalMessages.value = [...current_data];
+    messages.value = [...originalMessages.value];
+    pageSize = pagination.size;
+    totalPages = pagination.total;
   });
 </script>
 
