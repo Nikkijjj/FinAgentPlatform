@@ -1,6 +1,107 @@
+<script setup lang="ts">
+  import { websiteConfig } from '@/config/website.config';
+  import {
+    LockClosedOutline,
+    LogoFacebook,
+    LogoGithub,
+    LogoWechat,
+    PersonOutline,
+  } from '@vicons/ionicons5';
+  import { onMounted, reactive, ref } from 'vue';
+  import { FormItemRule, useMessage } from 'naive-ui';
+  import { useRouter } from 'vue-router';
+  import { ResultEnum } from '@/enums/httpEnum';
+  import { useUserStore } from '@/store/modules/user';
+
+  // 添加页面加载动画效果
+  onMounted(() => {
+    // 聚焦用户名输入框
+    setTimeout(() => {
+      const nameInput = document.querySelector('input[placeholder="请输入姓名"]');
+      if (nameInput) {
+        (nameInput as HTMLElement).focus();
+      }
+    }, 500);
+  });
+
+  interface UserInfoState {
+    name: string;
+    account: string;
+    password: string;
+    confirmPassword: string;
+  }
+
+  const userStore = useUserStore();
+
+  const message = useMessage();
+  const loading = ref(false);
+
+  const userInfoForm = ref();
+  const userInfo: UserInfoState = reactive({
+    name: '',
+    account: '',
+    password: '',
+    confirmPassword: '',
+  });
+  const userInfoRules = {
+    name: { required: true, message: '请输入姓名', trigger: 'blur' },
+    account: { required: true, message: '请输入账号', trigger: 'blur' },
+    password: { required: true, message: '请输入密码', trigger: 'blur' },
+    confirmPassword: {
+      validator: (rule: FormItemRule, value: string) => {
+        if (value == '') return new Error('请确认密码');
+        else if (value != userInfo.password) return new Error('两次输入的密码不一致。');
+        else return true;
+      },
+      trigger: 'blur',
+    },
+  };
+
+  const router = useRouter();
+
+  const submitUserInfo = (e) => {
+    e.preventDefault();
+    userInfoForm.value.validate(async (errors) => {
+      if (!errors) {
+        message.loading('验证中...');
+        loading.value = true;
+        try {
+          const params = {
+            name: userInfo.name,
+            account: userInfo.account,
+            password: userInfo.password,
+          };
+          const { code, msg } = await userStore.register(params);
+          message.destroyAll();
+          if (code == ResultEnum.SUCCESS) {
+            const loginParams = {
+              account: userInfo.account,
+              passowrd: userInfo.password,
+            };
+            const { code } = await userStore.login(loginParams);
+            if (code == ResultEnum.SUCCESS) {
+              message.success('注册成功，正在登录...');
+              router.replace('/profile');
+            } else {
+              message.error(msg || '注册失败，请重试。');
+            }
+          }
+        } catch (e) {
+          message.destroyAll();
+          message.error('网络异常，请稍后重试。');
+        } finally {
+          loading.value = false;
+        }
+      } else {
+        message.error('注册未通过，请重试。');
+      }
+    });
+  };
+</script>
+
 <template>
   <div class="view-account">
-    <div class="view-account-header"></div>
+    <div class="view-account-header"> </div>
     <div class="view-account-background">
       <div class="line line-1"></div>
       <div class="line line-2"></div>
@@ -20,19 +121,28 @@
         <div class="view-account-top-desc">{{ websiteConfig.loginDesc }}</div>
       </div>
       <div class="view-account-form">
-        <h2 class="view-account-title">账号登录</h2>
-        <div class="login-welcome">欢迎回来，请登录您的账号</div>
+        <h2 class="view-account-title">注册新账号</h2>
+        <div class="login-welcome">请填写下列信息以注册您的账号</div>
         <n-form
-          ref="formRef"
+          ref="userInfoForm"
           label-placement="left"
           size="large"
-          :model="formInline"
-          :rules="rules"
+          :model="userInfo"
+          :rules="userInfoRules"
           class="login-form"
         >
-          <n-form-item path="username" class="username-item">
+          <n-form-item path="name" class="username-item">
+            <n-input v-model:value="userInfo.name" placeholder="请输入姓名" class="login-input">
+              <template #prefix>
+                <n-icon size="18" color="#808695">
+                  <PersonOutline />
+                </n-icon>
+              </template>
+            </n-input>
+          </n-form-item>
+          <n-form-item path="account" class="username-item">
             <n-input
-              v-model:value="formInline.username"
+              v-model:value="userInfo.account"
               placeholder="请输入用户名"
               class="login-input"
             >
@@ -45,7 +155,7 @@
           </n-form-item>
           <n-form-item path="password" class="password-item">
             <n-input
-              v-model:value="formInline.password"
+              v-model:value="userInfo.password"
               type="password"
               showPasswordOn="click"
               placeholder="请输入密码"
@@ -58,32 +168,37 @@
               </template>
             </n-input>
           </n-form-item>
-          <n-form-item class="default-color remember-forgot">
-            <div class="flex-between-wrapper">
-              <div class="left">
-                <n-checkbox v-model:checked="autoLogin">自动登录</n-checkbox>
-              </div>
-              <div class="right">
-                <a href="javascript:" class="forgot-link">忘记密码</a>
-              </div>
-            </div>
+          <n-form-item path="confirmPassword" class="password-item">
+            <n-input
+              v-model:value="userInfo.confirmPassword"
+              type="password"
+              showPasswordOn="click"
+              placeholder="请确认密码"
+              class="login-input"
+            >
+              <template #prefix>
+                <n-icon size="18" color="#808695">
+                  <LockClosedOutline />
+                </n-icon>
+              </template>
+            </n-input>
           </n-form-item>
           <n-form-item>
             <n-button
               type="primary"
-              @click="handleSubmit"
+              @click="submitUserInfo"
               size="large"
               :loading="loading"
               block
               class="login-button"
             >
-              登录
+              注册
             </n-button>
           </n-form-item>
           <n-form-item class="default-color other-item">
             <div class="flex view-account-other">
               <div class="flex-initial other-text">
-                <span>其它登录方式</span>
+                <span>其它注册方式</span>
               </div>
               <div class="social-login">
                 <a href="javascript:" class="social-icon">
@@ -103,7 +218,7 @@
                 </a>
               </div>
               <div class="flex-initial" style="margin-left: auto">
-                <router-link to="/register" class="register-link">注册账号</router-link>
+                <router-link to="/login" class="register-link">返回登录</router-link>
               </div>
             </div>
           </n-form-item>
@@ -112,95 +227,6 @@
     </div>
   </div>
 </template>
-
-<script lang="ts" setup>
-  import { reactive, ref, onMounted } from 'vue';
-  import { useRoute, useRouter } from 'vue-router';
-  import { useUserStore } from '@/store/modules/user';
-  import { useMessage } from 'naive-ui';
-  import { ResultEnum } from '@/enums/httpEnum';
-  import {
-    PersonOutline,
-    LockClosedOutline,
-    LogoGithub,
-    LogoFacebook,
-    LogoWechat,
-  } from '@vicons/ionicons5';
-  import { PageEnum } from '@/enums/pageEnum';
-  import { websiteConfig } from '@/config/website.config';
-
-  // 添加页面加载动画效果
-  onMounted(() => {
-    // 聚焦用户名输入框
-    setTimeout(() => {
-      const usernameInput = document.querySelector('input[placeholder="请输入用户名"]');
-      if (usernameInput) {
-        (usernameInput as HTMLElement).focus();
-      }
-    }, 500);
-  });
-
-  interface FormState {
-    username: string;
-    password: string;
-  }
-
-  const formRef = ref();
-  const message = useMessage();
-  const loading = ref(false);
-  const autoLogin = ref(true);
-  const LOGIN_NAME = PageEnum.BASE_LOGIN_NAME;
-
-  const formInline = reactive({
-    username: 'admin',
-    password: '123456',
-    isCaptcha: true,
-  });
-
-  const rules = {
-    username: { required: true, message: '请输入用户名', trigger: 'blur' },
-    password: { required: true, message: '请输入密码', trigger: 'blur' },
-  };
-
-  const userStore = useUserStore();
-
-  const router = useRouter();
-  const route = useRoute();
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    formRef.value.validate(async (errors) => {
-      if (!errors) {
-        const { username, password } = formInline;
-        message.loading('登录中...');
-        loading.value = true;
-
-        const params: FormState = {
-          username,
-          password,
-        };
-
-        try {
-          const { code, message: msg } = await userStore.login(params);
-          message.destroyAll();
-          if (code == ResultEnum.SUCCESS) {
-            const toPath = decodeURIComponent((route.query?.redirect || '/') as string);
-            message.success('登录成功，即将进入系统');
-            if (route.name === LOGIN_NAME) {
-              router.replace('/');
-            } else router.replace(toPath);
-          } else {
-            message.info(msg || '登录失败');
-          }
-        } finally {
-          loading.value = false;
-        }
-      } else {
-        message.error('请填写完整信息，并且进行验证码校验');
-      }
-    });
-  };
-</script>
 
 <style lang="less" scoped>
   .view-account {
@@ -223,7 +249,6 @@
       opacity: 0.6;
       z-index: 0;
     }
-
     &::after {
       content: '';
       position: absolute;
@@ -235,7 +260,6 @@
       opacity: 0.8;
       z-index: 0;
     }
-
     &-container {
       padding: 32px 40px 20px;
       max-width: 580px;
@@ -267,7 +291,6 @@
         }
       }
     }
-
     &-title {
       text-align: center;
       font-size: 22px;
@@ -294,11 +317,9 @@
       margin-bottom: 30px;
       margin-top: 20px;
     }
-
     &-top {
       padding: 10px 0;
       text-align: center;
-
       &-logo {
         margin-bottom: 8px;
         display: flex;
@@ -307,27 +328,22 @@
           height: 60px;
         }
       }
-
       &-desc {
         font-size: 14px;
         color: #606266;
       }
     }
-
     &-other {
       width: 100%;
       display: flex;
       align-items: center;
     }
-
     .default-color {
       color: #515a6e;
-
       .ant-checkbox-wrapper {
         color: #515a6e;
       }
     }
-
     .login-button {
       margin-top: 10px;
       height: 42px;
@@ -390,12 +406,10 @@
         color: #2d8cf0;
       }
     }
-
     .social-login {
       display: flex;
       margin-left: 16px;
     }
-
     .social-icon {
       display: flex;
       justify-content: center;
@@ -414,7 +428,6 @@
         }
       }
     }
-
     .register-link {
       color: #2d8cf0;
       transition: all 0.3s;
@@ -456,7 +469,6 @@
       margin-bottom: 0;
     }
   }
-
   @media (min-width: 768px) {
     .view-account {
       background-image: url('../../assets/images/login.svg'),
@@ -500,7 +512,6 @@
       }
     }
   }
-
   @media (max-height: 650px) {
     .view-account-container {
       margin-top: 5vh;
@@ -608,6 +619,7 @@
         animation: wave-left-to-right 15s ease-in-out infinite;
         transform: rotate(-2deg);
       }
+
       &-2 {
         bottom: 0;
         left: 0;
@@ -619,6 +631,7 @@
         animation-delay: -5s;
         transform: rotate(-1deg);
       }
+
       &-3 {
         bottom: 0;
         left: 0;
@@ -630,6 +643,7 @@
         animation-delay: -2s;
       }
     }
+
     @keyframes wave-left-to-right {
       0% {
         background-position-x: 0;
@@ -644,6 +658,7 @@
         background-position-y: 0;
       }
     }
+
     @keyframes float {
       0% {
         transform: translateY(0);

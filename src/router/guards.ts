@@ -9,8 +9,9 @@ import { isNavigationFailure, Router } from 'vue-router';
 import { RedirectName } from './constant';
 
 const LOGIN_PATH = PageEnum.BASE_LOGIN;
+const REGISTER_PATH = PageEnum.BASE_REGISTER;
 
-const whitePathList = [LOGIN_PATH]; // no redirect whitelist
+const whitePathList = [LOGIN_PATH, REGISTER_PATH]; // no redirect whitelist
 
 export function createRouterGuards(router: Router) {
   const userStore = useUser();

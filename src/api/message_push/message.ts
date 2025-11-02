@@ -2,6 +2,7 @@ import request from '@/utils/axios/index';
 
 //单条数据
 export interface MessageData {
+  _id: string;
   company_of_interest: string;
   messages: {
     content: string;
@@ -9,10 +10,10 @@ export interface MessageData {
   }[];
   report: string;
   trade_date: string;
-  _id: string;
+  is_read: string;
 }
 
-//请求响应结果
+//消息列表响应结果
 export interface MessageResponse {
   code: number;
   data: {
@@ -31,11 +32,11 @@ export interface MessageResponse {
  *  获取所有消息列表
  *  @returns type:MessageData[]
  */
-export const fetchMessages: (time, page_num, page_count) => Promise<MessageResponse> = async (
-  time: [],
-  page_num: number,
-  page_count: number
-) => {
+export async function fetchMessages(
+  time?: [],
+  page_num?: number,
+  page_count?: number
+): Promise<MessageResponse | undefined> {
   try {
     const result = await request.post('/api/scheduler/list', {
       time: time,
@@ -46,7 +47,20 @@ export const fetchMessages: (time, page_num, page_count) => Promise<MessageRespo
   } catch (error) {
     console.log(error);
   }
-};
+}
+
+/**
+ * 更新消息已读状态
+ * @param _id 消息id
+ */
+export async function updateReadStatus(_id: string) {
+  try {
+    const result = await request.post('/api/scheduler/read', _id);
+    return result.data;
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 // 从content中提取标题
 const extractTitleFromContent = (content: string): string => {

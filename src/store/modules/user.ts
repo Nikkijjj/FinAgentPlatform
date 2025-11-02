@@ -3,14 +3,8 @@ import { store } from '@/store';
 import { ACCESS_TOKEN, CURRENT_USER, IS_SCREENLOCKED } from '@/store/mutation-types';
 import { ResultEnum } from '@/enums/httpEnum';
 
-import { getUserInfo as getUserInfoApi, login } from '@/api/system/user';
+import { getUserInfo as getUserInfoApi, login, register, UserInfoType } from '@/api/user/user';
 import { storage } from '@/utils/Storage';
-
-export type UserInfoType = {
-  // TODO: add your own data
-  username: string;
-  email: string;
-};
 
 export interface IUserState {
   token: string;
@@ -18,7 +12,7 @@ export interface IUserState {
   welcome: string;
   avatar: string;
   permissions: any[];
-  info: UserInfoType;
+  info: UserInfoType | null;
 }
 
 export const useUserStore = defineStore({
@@ -44,7 +38,7 @@ export const useUserStore = defineStore({
     getPermissions(): [any][] {
       return this.permissions;
     },
-    getUserInfo(): UserInfoType {
+    getUserInfo(): UserInfoType | null {
       return this.info;
     },
   },
@@ -58,7 +52,7 @@ export const useUserStore = defineStore({
     setPermissions(permissions) {
       this.permissions = permissions;
     },
-    setUserInfo(info: UserInfoType) {
+    setUserInfo(info: UserInfoType | null) {
       this.info = info;
     },
     // 登录
@@ -71,9 +65,13 @@ export const useUserStore = defineStore({
         storage.set(CURRENT_USER, result, ex);
         storage.set(IS_SCREENLOCKED, false);
         this.setToken(result.token);
-        this.setUserInfo(result);
       }
       return response;
+    },
+
+    //注册
+    async register(params: any) {
+      return register(params);
     },
 
     // 获取用户信息
@@ -94,7 +92,7 @@ export const useUserStore = defineStore({
     // 登出
     async logout() {
       this.setPermissions([]);
-      this.setUserInfo({ username: '', email: '' });
+      this.setUserInfo(null);
       storage.remove(ACCESS_TOKEN);
       storage.remove(CURRENT_USER);
     },

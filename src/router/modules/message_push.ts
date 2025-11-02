@@ -3,14 +3,16 @@ import { Layout } from '@/router/constant';
 import { BorderOuterOutlined } from '@vicons/antd';
 import { renderIcon } from '@/utils';
 
+const routeName = 'message_push';
+
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/message_push',
-    name: 'message_push',
+    name: routeName,
     redirect: '/message_push/index',
     component: Layout,
     meta: {
-      sort: 9,
+      sort: 1,
       isRoot: true,
       activeMenu: 'message_push_index',
       icon: renderIcon(BorderOuterOutlined),
@@ -18,7 +20,7 @@ const routes: Array<RouteRecordRaw> = [
     children: [
       {
         path: 'index',
-        name: `message_push_index`,
+        name: `${routeName}_index`,
         meta: {
           title: '消息推送',
           activeMenu: 'message_push_index',

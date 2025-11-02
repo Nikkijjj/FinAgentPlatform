@@ -18,10 +18,11 @@
     <!-- 项目卡片网格 -->
     <n-grid :cols="24" :x-gap="20" :y-gap="10" class="scrollable-content">
       <n-gi v-for="(item, index) in filteredMessages" :key="index" :span="6">
-        <n-card class="message-card">
+        <n-card class="message-card" :class="{ read: item.is_read == 'yes' }">
           <template #header>
             <div class="header">
               <span class="header-label">{{ extractTruncatedTitle(item.report) }}</span>
+              <div :class="{ 'red-circle': item.is_read != 'yes' }"></div>
             </div>
           </template>
 
@@ -121,7 +122,8 @@
     fetchMessages,
     MessageData,
     truncateContent,
-  } from '@/api/messagePush/message';
+  } from '@/api/message_push/message';
+  import { mockMessageResponse } from '../../../mock/message_push';
 
   // 配置 marked 选项
   marked.setOptions({
@@ -187,8 +189,9 @@
     currentPage.value = page;
   };
 
-  const showDetail = (item: any) => {
+  const showDetail = (item: MessageData) => {
     currentItem.value = item;
+    item.is_read = 'yes';
     showModal.value = true;
   };
 
@@ -199,8 +202,8 @@
 
   // 生命周期
   onMounted(async () => {
-    const response = await fetchMessages(null, null, null);
-    const { current_data, pagination } = response.data;
+    const messageResponse = await mockMessageResponse();
+    const { current_data, pagination } = messageResponse.data;
     originalMessages.value = [...current_data];
     messages.value = [...originalMessages.value];
     pageSize = pagination.size;
@@ -278,6 +281,17 @@
       transform: translateY(-4px);
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     }
+  }
+
+  .read {
+    background-color: #e5dddd;
+  }
+
+  .red-circle {
+    width: 20px;
+    height: 20px;
+    background-color: red;
+    border-radius: 50%;
   }
 
   .header {

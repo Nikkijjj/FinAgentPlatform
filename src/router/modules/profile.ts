@@ -1,31 +1,31 @@
 import { RouteRecordRaw } from 'vue-router';
 import { Layout } from '@/router/constant';
-import { ProjectOutlined } from '@vicons/antd';
+import { BorderOuterOutlined } from '@vicons/antd';
 import { renderIcon } from '@/utils';
 
-const routeName = 'agent';
+const routeName = 'profile';
 
 const routes: Array<RouteRecordRaw> = [
   {
-    path: '/agent',
-    redirect: '/agent/index',
+    path: '/profile',
     name: routeName,
+    redirect: '/profile/index',
     component: Layout,
     meta: {
-      sort: 2,
+      sort: 3,
       isRoot: true,
-      activeMenu: 'agent',
-      icon: renderIcon(ProjectOutlined),
+      activeMenu: 'profile_index',
+      icon: renderIcon(BorderOuterOutlined),
     },
     children: [
       {
         path: 'index',
         name: `${routeName}_index`,
         meta: {
-          title: '多功能AGENT',
-          activeMenu: 'agent_index',
+          title: '股票档案',
+          activeMenu: 'profile_index',
         },
-        component: () => import('@/views/agent/index.vue'),
+        component: () => import('@/views/profile/index.vue'),
       },
     ],
   },
