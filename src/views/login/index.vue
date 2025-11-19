@@ -118,7 +118,6 @@
   import { useRoute, useRouter } from 'vue-router';
   import { useUserStore } from '@/store/modules/user';
   import { useMessage } from 'naive-ui';
-  import { ResultEnum } from '@/enums/httpEnum';
   import {
     PersonOutline,
     LockClosedOutline,
@@ -139,11 +138,6 @@
       }
     }, 500);
   });
-
-  interface FormState {
-    username: string;
-    password: string;
-  }
 
   const formRef = ref();
   const message = useMessage();
@@ -167,6 +161,11 @@
   const router = useRouter();
   const route = useRoute();
 
+  const clearForm = () => {
+    formInline.username = '';
+    formInline.password = '';
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     formRef.value.validate(async (errors) => {
@@ -175,22 +174,23 @@
         message.loading('登录中...');
         loading.value = true;
 
-        const params: FormState = {
-          username,
-          password,
+        const params = {
+          account: username,
+          password: password,
         };
 
         try {
-          const { code, message: msg } = await userStore.login(params);
+          const response = await userStore.login(params);
           message.destroyAll();
-          if (code == ResultEnum.SUCCESS) {
+          if (response.code == 0) {
             const toPath = decodeURIComponent((route.query?.redirect || '/') as string);
-            message.success('登录成功，即将进入系统');
+            message.success(response.msg);
             if (route.name === LOGIN_NAME) {
-              router.replace('/');
-            } else router.replace(toPath);
+              await router.replace('/');
+            } else await router.replace(toPath);
           } else {
-            message.info(msg || '登录失败');
+            clearForm();
+            message.error(response.msg);
           }
         } finally {
           loading.value = false;

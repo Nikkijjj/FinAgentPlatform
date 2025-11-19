@@ -4,6 +4,7 @@ import { RedirectRoute } from '@/router/base';
 import { PageEnum } from '@/enums/pageEnum';
 import { createRouterGuards } from './guards';
 import type { IModuleType } from './types';
+import { useAsyncRoute } from '@/store/modules/asyncRoute';
 
 const modules = import.meta.glob<IModuleType>('./modules/**/*.ts', { eager: true });
 

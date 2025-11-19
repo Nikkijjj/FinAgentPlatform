@@ -1,29 +1,36 @@
 import { defineStore } from 'pinia';
 import { store } from '@/store';
-import { ACCESS_TOKEN, CURRENT_USER, IS_SCREENLOCKED } from '@/store/mutation-types';
-import { ResultEnum } from '@/enums/httpEnum';
+import { ACCESS_TOKEN, CURRENT_USER } from '@/store/mutation-types';
 
-import { getUserInfo as getUserInfoApi, login, register, UserInfoType } from '@/api/user/user';
+import {
+  getUserInvestmentProfile,
+  InvestmentProfileType,
+  login,
+  LoginParams,
+  register,
+  RegisterParams,
+  updateUserInvestmentProfile,
+  UserInfoType,
+} from '@/api/user/user';
 import { storage } from '@/utils/Storage';
+import { mockEmptyUserInfo } from '../../../mock/user';
 
 export interface IUserState {
   token: string;
-  username: string;
   welcome: string;
   avatar: string;
   permissions: any[];
-  info: UserInfoType | null;
+  info: UserInfoType;
 }
 
 export const useUserStore = defineStore({
   id: 'app-user',
   state: (): IUserState => ({
     token: storage.get(ACCESS_TOKEN, ''),
-    username: '',
     welcome: '',
     avatar: '',
     permissions: [],
-    info: storage.get(CURRENT_USER, {}),
+    info: storage.get(CURRENT_USER, mockEmptyUserInfo),
   }),
   getters: {
     getToken(): string {
@@ -32,13 +39,22 @@ export const useUserStore = defineStore({
     getAvatar(): string {
       return this.avatar;
     },
-    getNickname(): string {
-      return this.username;
+    getName(): string {
+      return this.info.name;
+    },
+    getAccount(): string {
+      return this.info.account;
+    },
+    getPassword(): string {
+      return this.info.password;
+    },
+    getUserInvestmentProfile(): InvestmentProfileType {
+      return this.info.user_investment_profile;
     },
     getPermissions(): [any][] {
       return this.permissions;
     },
-    getUserInfo(): UserInfoType | null {
+    getUserInfo(): UserInfoType {
       return this.info;
     },
   },
@@ -49,50 +65,65 @@ export const useUserStore = defineStore({
     setAvatar(avatar: string) {
       this.avatar = avatar;
     },
+    setName(name: string) {
+      this.info.name = name;
+    },
+    setAccount(account: string) {
+      this.info.account = account;
+    },
+    setPassword(password: string) {
+      this.info.password = password;
+    },
+    setInvestmentProfile(profile: InvestmentProfileType) {
+      this.info.user_investment_profile = profile;
+    },
     setPermissions(permissions) {
       this.permissions = permissions;
     },
-    setUserInfo(info: UserInfoType | null) {
+    setUserInfo(info: UserInfoType) {
       this.info = info;
     },
+    clearUserInfo() {
+      this.info = mockEmptyUserInfo;
+    },
     // 登录
-    async login(params: any) {
+    async login(params: LoginParams) {
       const response = await login(params);
-      const { result, code } = response;
-      if (code === ResultEnum.SUCCESS) {
-        const ex = 7 * 24 * 60 * 60;
-        storage.set(ACCESS_TOKEN, result.token, ex);
-        storage.set(CURRENT_USER, result, ex);
-        storage.set(IS_SCREENLOCKED, false);
-        this.setToken(result.token);
+      if (response.code == 0) {
+        this.setToken(response.data.token);
+        this.setName(response.data.name);
+        this.setAccount(params.account);
+        this.setPassword(params.password);
+        storage.set(ACCESS_TOKEN, this.getToken);
+        storage.set(CURRENT_USER, this.getUserInfo);
       }
       return response;
     },
 
-    //注册
-    async register(params: any) {
-      return register(params);
+    // 注册
+    async register(params: RegisterParams) {
+      return await register(params);
     },
 
-    // 获取用户信息
-    async getInfo() {
-      const data = await getUserInfoApi();
-      const { result } = data;
-      if (result.permissions && result.permissions.length) {
-        const permissionsList = result.permissions;
-        this.setPermissions(permissionsList);
-        this.setUserInfo(result);
-      } else {
-        throw new Error('getInfo: permissionsList must be a non-null array !');
-      }
-      this.setAvatar(result.avatar);
-      return result;
+    // 获取用户投资信息
+    async fetchUserInvestmentProfile() {
+      const response = await getUserInvestmentProfile(this.token);
+      if (response.code == 0) this.setInvestmentProfile(response.data);
+      return response;
+    },
+
+    // 更新用户投资信息
+    async updateUserInvestmentProfile() {
+      const params = {
+        user_investment_profile: this.info.user_investment_profile,
+      };
+      return await updateUserInvestmentProfile(this.token, params);
     },
 
     // 登出
     async logout() {
       this.setPermissions([]);
-      this.setUserInfo(null);
+      this.clearUserInfo();
       storage.remove(ACCESS_TOKEN);
       storage.remove(CURRENT_USER);
     },

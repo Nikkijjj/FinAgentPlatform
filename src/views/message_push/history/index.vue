@@ -1,95 +1,112 @@
 <template>
   <n-card class="large-card">
-    <!-- 筛选器区域 -->
-    <div class="filter-container">
-      <n-space align="center">
-        <span class="filter-label">发布时间范围：</span>
-        <n-date-picker
-          v-model:value="dateRange"
-          type="daterange"
-          clearable
-          @update:value="handleDateFilter"
-          placeholder="选择日期范围"
-        />
-        <n-button @click="resetFilter" type="primary" ghost size="small"> 重置 </n-button>
-      </n-space>
+    <div class="nav">
+      <n-button @click="toToday" class="nav-item">今日消息</n-button>
+      <n-button disabled class="nav-item">历史消息</n-button>
     </div>
 
-    <!-- 项目卡片网格 -->
-    <n-grid :cols="24" :x-gap="20" :y-gap="10" class="scrollable-content">
-      <n-gi v-for="(item, index) in filteredMessages" :key="index" :span="6">
-        <n-card class="message-card" :class="{ read: item.is_read == 'yes' }">
-          <template #header>
-            <div class="header">
-              <span class="header-label">{{ extractTruncatedTitle(item.report) }}</span>
-              <div :class="{ 'red-circle': item.is_read != 'yes' }"></div>
-            </div>
-          </template>
+    <div class="container">
+      <!-- 筛选器区域 -->
+      <div class="filter-container">
+        <n-space align="center">
+          <span class="filter-label">发布时间范围：</span>
+          <n-date-picker
+            v-model:value="dateRange"
+            type="daterange"
+            clearable
+            @update:value="handleDateFilter"
+            placeholder="选择日期范围"
+          />
+          <n-button @click="resetFilter" type="primary" ghost size="small"> 重置 </n-button>
+        </n-space>
+      </div>
 
-          <div class="card-body">
-            <div class="info-item">
-              <n-icon class="info-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16">
-                  <path
-                    fill="currentColor"
-                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"
-                  />
-                </svg>
-              </n-icon>
-              <div>
-                <div class="card-label">发布时间</div>
-                <span class="card-value">{{ item.trade_date || '未设置' }}</span>
+      <!-- 项目卡片网格 -->
+      <n-grid :cols="24" :x-gap="20" :y-gap="10" class="scrollable-content">
+        <n-gi v-for="(item, index) in filteredMessages" :key="index" :span="6">
+          <n-card class="message-card" :class="{ read: item.is_read == 'yes' }">
+            <template #header>
+              <div class="header">
+                <span class="header-label">{{ item.label }}</span>
+                <div :class="{ 'red-circle': item.is_read != 'yes' }"></div>
+              </div>
+            </template>
+
+            <div class="card-body">
+              <div class="info-item">
+                <n-icon class="info-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"
+                    />
+                  </svg>
+                </n-icon>
+                <div>
+                  <div class="card-label">发布时间</div>
+                  <span class="card-value">{{ item.date || '未设置' }}</span>
+                </div>
+              </div>
+              <div class="info-item">
+                <n-icon class="info-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"
+                    />
+                  </svg>
+                </n-icon>
+                <div>
+                  <div class="card-label">消息内容</div>
+                  <span class="card-value">{{ truncateContent(item.report) }}</span>
+                </div>
               </div>
             </div>
-            <div class="info-item">
-              <n-icon class="info-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16">
-                  <path
-                    fill="currentColor"
-                    d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"
-                  />
-                </svg>
-              </n-icon>
-              <div>
-                <div class="card-label">消息内容</div>
-                <span class="card-value">{{ truncateContent(item.report) }}</span>
+
+            <template #footer>
+              <div class="card-footer">
+                <n-button text class="action-btn" @click="showDetail(item)">
+                  <template #icon>
+                    <n-icon>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        width="16"
+                        height="16"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
+                        />
+                      </svg>
+                    </n-icon>
+                  </template>
+                  查看详情
+                </n-button>
               </div>
-            </div>
-          </div>
+            </template>
+          </n-card>
+        </n-gi>
+      </n-grid>
 
-          <template #footer>
-            <div class="card-footer">
-              <n-button text class="action-btn" @click="showDetail(item)">
-                <template #icon>
-                  <n-icon>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      width="16"
-                      height="16"
-                    >
-                      <path
-                        fill="currentColor"
-                        d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
-                      />
-                    </svg>
-                  </n-icon>
-                </template>
-                查看详情
-              </n-button>
-            </div>
-          </template>
-        </n-card>
-      </n-gi>
-    </n-grid>
-
-    <!-- 固定分页器 -->
-    <div class="pagination-container">
-      <n-pagination
-        v-model:page="currentPage"
-        :page-count="totalPages"
-        @update:page="handlePageChange"
-      />
+      <!-- 固定分页器 -->
+      <div class="pagination-container">
+        <n-pagination
+          v-model:page="currentPage"
+          :page-count="totalPages"
+          @update:page="handlePageChange"
+        />
+      </div>
     </div>
   </n-card>
 
@@ -117,26 +134,26 @@
   import { ref, computed, onMounted } from 'vue';
   import { NCard, NGrid, NPagination, NButton, NIcon, NModal, NDatePicker, NSpace } from 'naive-ui';
   import { marked } from 'marked';
-  import {
-    extractTruncatedTitle,
-    fetchMessages,
-    MessageData,
-    truncateContent,
-  } from '@/api/message_push/message';
-  import { mockMessageResponse } from '../../../mock/message_push';
-
+  import { fetchNews, StockNews, truncateContent } from '@/api/message_push/message';
+  import { useRouter } from 'vue-router';
+  import { useUserStore } from '@/store/modules/user';
+  import { useMessage } from 'naive-ui';
   // 配置 marked 选项
   marked.setOptions({
     breaks: true,
     gfm: true,
   });
 
+  const router = useRouter();
+  const userStore = useUserStore();
+  const message = useMessage();
+
   // 原始数据
-  const originalMessages = ref<MessageData[]>([]);
+  const originalMessages = ref<StockNews[]>([]);
 
   // 响应式数据
-  const messages = ref<MessageData[]>([]);
-  let pageSize: number;
+  const messages = ref<StockNews[]>([]);
+  let pageSize = 6;
   let totalPages: number;
   const dateRange = ref<[number, number] | null>(null);
   const currentPage = ref(1);
@@ -189,7 +206,7 @@
     currentPage.value = page;
   };
 
-  const showDetail = (item: MessageData) => {
+  const showDetail = (item: StockNews) => {
     currentItem.value = item;
     item.is_read = 'yes';
     showModal.value = true;
@@ -200,18 +217,60 @@
     currentItem.value = null;
   };
 
+  const toToday = () => {
+    router.push('/message_push/today');
+  };
+
   // 生命周期
   onMounted(async () => {
-    const messageResponse = await mockMessageResponse();
-    const { current_data, pagination } = messageResponse.data;
-    originalMessages.value = [...current_data];
-    messages.value = [...originalMessages.value];
-    pageSize = pagination.size;
-    totalPages = pagination.total;
+    const params = {
+      page: 1,
+      size: pageSize,
+    };
+    const messageResponse = await fetchNews(userStore.getToken, params);
+    if (messageResponse.code == 0) {
+      const { current_data, pagination } = messageResponse.data;
+      originalMessages.value = [...current_data];
+      messages.value = [...originalMessages.value];
+      pageSize = pagination.size;
+      totalPages = pagination.total;
+    } else message.error(messageResponse.msg);
   });
 </script>
 
 <style scoped lang="scss">
+  .nav {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+    padding: 12px 24px;
+  }
+
+  .nav-item {
+    width: 400px;
+    height: 60px;
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: 2px solid #e5e7eb;
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 500;
+  }
+
+  .nav-item:disabled {
+    color: #165dff;
+    border: 3px solid #165dff;
+  }
+  .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
   .large-card {
     position: relative;
     height: 100%;

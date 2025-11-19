@@ -9,9 +9,9 @@ export enum PageEnum {
   REDIRECT = '/redirect',
   REDIRECT_NAME = 'Redirect',
   // 首页
-  BASE_HOME = '/message_push',
+  BASE_HOME = '/message_push/today',
   //首页跳转默认路由
-  BASE_HOME_REDIRECT = '/message_push/index',
+  BASE_HOME_REDIRECT = '/message_push/today',
   // 错误
   ERROR_PAGE_NAME = 'ErrorPage',
 }

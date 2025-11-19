@@ -1,6 +1,6 @@
-import { MessageData, MessageResponse } from '@/api/message_push/message';
+import { StockNews, FetchNewsResponse } from '@/api/message_push/message';
 
-const mockMessages: MessageData[] = [
+const mockMessages: StockNews[] = [
   {
     _id: '68ff1a4689eb9c37f0d74292',
     company_of_interest: '000001',
@@ -81,13 +81,13 @@ const mockData = {
   },
 };
 
-const mockResponse: MessageResponse = {
+const mockResponse: FetchNewsResponse = {
   code: 0,
   data: mockData,
   msg: 'success',
 };
 
-export async function mockMessageResponse(): Promise<MessageResponse> {
+export async function mockMessageResponse(): Promise<FetchNewsResponse> {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve(mockResponse);

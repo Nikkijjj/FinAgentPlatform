@@ -1,12 +1,12 @@
 import { PageEnum } from '@/enums/pageEnum';
 import { ErrorPageRoute } from '@/router/base';
 import { useAsyncRoute } from '@/store/modules/asyncRoute';
-import { useUser } from '@/store/modules/user';
 import { ACCESS_TOKEN } from '@/store/mutation-types';
 import { storage } from '@/utils/Storage';
 import type { RouteRecordRaw } from 'vue-router';
 import { isNavigationFailure, Router } from 'vue-router';
 import { RedirectName } from './constant';
+import { useUserStore } from '@/store/modules/user';
 
 const LOGIN_PATH = PageEnum.BASE_LOGIN;
 const REGISTER_PATH = PageEnum.BASE_REGISTER;
@@ -14,11 +14,12 @@ const REGISTER_PATH = PageEnum.BASE_REGISTER;
 const whitePathList = [LOGIN_PATH, REGISTER_PATH]; // no redirect whitelist
 
 export function createRouterGuards(router: Router) {
-  const userStore = useUser();
   const asyncRouteStore = useAsyncRoute();
+  const userStore = useUserStore();
   router.beforeEach(async (to, from, next) => {
     const Loading = window['$loading'] || null;
     Loading && Loading.start();
+
     if (from.path === LOGIN_PATH && to.name === 'errorPage') {
       next(PageEnum.BASE_HOME);
       return;
@@ -58,9 +59,9 @@ export function createRouterGuards(router: Router) {
       return;
     }
 
-    const userInfo = await userStore.getInfo();
+    const permissions = userStore.getPermissions;
 
-    const routes = await asyncRouteStore.generateRoutes(userInfo);
+    const routes = await asyncRouteStore.generateRoutes(permissions);
 
     // 动态添加可访问路由表
     routes.forEach((item) => {

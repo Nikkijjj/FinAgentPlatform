@@ -10,8 +10,8 @@
   import { onMounted, reactive, ref } from 'vue';
   import { FormItemRule, useMessage } from 'naive-ui';
   import { useRouter } from 'vue-router';
-  import { ResultEnum } from '@/enums/httpEnum';
   import { useUserStore } from '@/store/modules/user';
+  import { mockEmptyUserInfo } from '../../../mock/user';
 
   // 添加页面加载动画效果
   onMounted(() => {
@@ -70,22 +70,18 @@
             name: userInfo.name,
             account: userInfo.account,
             password: userInfo.password,
+            user_investment_profile: mockEmptyUserInfo.user_investment_profile,
           };
-          const { code, msg } = await userStore.register(params);
-          message.destroyAll();
-          if (code == ResultEnum.SUCCESS) {
-            const loginParams = {
-              account: userInfo.account,
-              passowrd: userInfo.password,
-            };
-            const { code } = await userStore.login(loginParams);
-            if (code == ResultEnum.SUCCESS) {
-              message.success('注册成功，正在登录...');
-              router.replace('/profile');
-            } else {
-              message.error(msg || '注册失败，请重试。');
-            }
-          }
+          await userStore.register(params);
+          const loginParams = {
+            account: userInfo.account,
+            password: userInfo.password,
+          };
+          const result = await userStore.login(loginParams);
+          if (result.code == 0) {
+            message.success(result.msg);
+            await router.replace('/profile');
+          } else message.error(result.msg);
         } catch (e) {
           message.destroyAll();
           message.error('网络异常，请稍后重试。');

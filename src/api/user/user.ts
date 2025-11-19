@@ -1,31 +1,34 @@
 import { Alova } from '@/utils/http/alova';
-import { ResultEnum } from '@/enums/httpEnum';
+import request from '@/utils/axios';
+import { badResponse } from '@/api/response';
 
 export interface UserInfoType {
-  _id: string;
-  name: string;
-  account: string;
-  password: string;
-  stocks: {
-    user_investment_profile: InvestmentProfileType;
-  };
+  _id: string; // id
+  name: string; // 姓名
+  account: string; // 账号
+  password: string; // 密码
+  user_investment_profile: InvestmentProfileType; // 用户投资配置(json)
+  status: 'active' | 'annul' | undefined; // 状态“生效”/“注销”
+  date: string; // 用户创建时间
 }
 
 export interface InvestmentProfileType {
   personalized_investment_goals: {
     investment_tenure: {
-      //short_term | medium_term | long_term
-      tenure_type: string | undefined;
+      tenure_type: 'short_term' | 'medium_term' | 'long_term' | undefined;
       specific_years: number | undefined;
-      tenure_description: string | undefined;
+      tenure_description?: string | undefined;
     };
 
     expected_return: {
       annualized_return_rate: number | undefined;
-      //stable | moderate | flexible
-      return_stability: string | undefined;
-      return_description: string | undefined;
-      loss_tolerance_ratio: number | undefined;
+      return_stability: 'stable' | 'moderate' | 'flexible' | undefined;
+      return_description?: string | undefined;
+      risk_tolerance: {
+        risk_level: 'conservative' | 'moderate' | 'aggressive' | 'radical' | undefined;
+        risk_description?: string | undefined;
+        loss_tolerance_ratio: number | undefined;
+      };
     };
   };
 
@@ -51,7 +54,7 @@ export interface StockType {
   holding_quantity: number;
   purchase_price: number;
   purchase_time: string;
-  holding_remark: string;
+  holding_remark?: string;
 }
 
 /**
@@ -66,50 +69,10 @@ export function getUserInfo() {
 }
 
 /**
- * @description: 用户登录
- */
-export function login(params) {
-  return Alova.Post<InResult>(
-    '/login',
-    {
-      params,
-    },
-    {
-      meta: {
-        isReturnNativeResponse: true,
-      },
-    }
-  );
-}
-
-/**
- * @description: 用户注册
- */
-export function register(params) {
-  console.log(params);
-
-  return {
-    code: ResultEnum.SUCCESS,
-    msg: '信息有效',
-  };
-}
-
-/**
  * @description: 用户修改密码
  */
 export function changePassword(params, uid) {
   return Alova.Post(`/user/u${uid}/changepw`, { params });
-}
-
-/**
- * @description: 更新用户信息
- */
-export function updateUserProfile(params) {
-  console.log(params);
-  return {
-    code: ResultEnum.SUCCESS,
-    msg: '修改成功',
-  };
 }
 
 /**
@@ -119,4 +82,91 @@ export function logout(params) {
   return Alova.Post('/login/logout', {
     params,
   });
+}
+
+export interface LoginParams {
+  account: string;
+  password: string;
+}
+
+/**
+ * @description: 用户登录
+ */
+export async function login(params: LoginParams) {
+  console.log('请求：login\n' + '参数：' + params);
+  try {
+    const result = await request.post('/api/user/login', {
+      ...params,
+    });
+    console.log('响应：\n' + JSON.stringify(result, null, 2));
+    return result.data ?? badResponse;
+  } catch (error) {
+    console.error(error);
+    return badResponse;
+  }
+}
+
+export interface RegisterParams {
+  name: string;
+  account: string;
+  password: string;
+  user_investment_profile?: InvestmentProfileType;
+}
+
+/**
+ * @description: 用户注册
+ */
+export async function register(params: RegisterParams) {
+  try {
+    const result = await request.post('/api/user/register', {
+      ...params,
+    });
+    console.log('响应：\n' + JSON.stringify(result, null, 2));
+    return result.data ?? badResponse;
+  } catch (error) {
+    console.error(error);
+    return badResponse;
+  }
+}
+
+export async function getUserInvestmentProfile(token: string) {
+  console.log('请求：getUserInvestmentProfile\n' + 'token：' + token);
+  try {
+    const result = await request.get('/api/user/investment/profile', {
+      headers: {
+        Authorization: token,
+      },
+    });
+    console.log('响应：\n' + JSON.stringify(result, null, 2));
+    return result.data ?? badResponse;
+  } catch (error) {
+    console.error(error);
+    return badResponse;
+  }
+}
+
+interface UpdateUserInvestmentProfileParams {
+  user_investment_profile: InvestmentProfileType;
+}
+
+/**
+ * @description: 更新用户信息
+ */
+export async function updateUserInvestmentProfile(
+  token: string,
+  params: UpdateUserInvestmentProfileParams
+) {
+  console.log('请求：updateUserInvestmentProfile\n' + 'token：' + token);
+  try {
+    const result = await request.post('/api/user/investment/update_profile', params, {
+      headers: {
+        Authorization: token,
+      },
+    });
+    console.log('响应：\n' + JSON.stringify(result, null, 2));
+    return result.data ?? badResponse;
+  } catch (error) {
+    console.error(error);
+    return badResponse;
+  }
 }

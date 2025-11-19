@@ -11,9 +11,6 @@
       >
         <div class="form-block">
           <span class="block-title">个人信息</span>
-          <n-form-item label="id">
-            <n-input v-model:value="formData._id" disabled />
-          </n-form-item>
           <n-form-item label="昵称">
             <n-input v-model:value="formData.name" disabled />
           </n-form-item>
@@ -60,8 +57,8 @@
             <n-select
               :options="term_options"
               v-model:value="
-                formData.stocks.user_investment_profile.personalized_investment_goals
-                  .investment_tenure.tenure_type
+                formData.user_investment_profile.personalized_investment_goals.investment_tenure
+                  .tenure_type
               "
             />
           </n-form-item>
@@ -70,8 +67,8 @@
               clearable
               :min="0"
               v-model:value="
-                formData.stocks.user_investment_profile.personalized_investment_goals
-                  .investment_tenure.specific_years
+                formData.user_investment_profile.personalized_investment_goals.investment_tenure
+                  .specific_years
               "
             />
           </n-form-item>
@@ -79,8 +76,8 @@
             <n-input
               clearable
               v-model:value="
-                formData.stocks.user_investment_profile.personalized_investment_goals
-                  .investment_tenure.tenure_description
+                formData.user_investment_profile.personalized_investment_goals.investment_tenure
+                  .tenure_description
               "
             />
           </n-form-item>
@@ -95,8 +92,8 @@
               :max="100"
               :precision="2"
               v-model:value="
-                formData.stocks.user_investment_profile.personalized_investment_goals
-                  .expected_return.annualized_return_rate
+                formData.user_investment_profile.personalized_investment_goals.expected_return
+                  .annualized_return_rate
               "
             >
               <template #suffix> % </template>
@@ -106,8 +103,8 @@
             <n-select
               :options="stability_options"
               v-model:value="
-                formData.stocks.user_investment_profile.personalized_investment_goals
-                  .expected_return.return_stability
+                formData.user_investment_profile.personalized_investment_goals.expected_return
+                  .return_stability
               "
             />
           </n-form-item>
@@ -115,8 +112,8 @@
             <n-input
               clearable
               v-model:value="
-                formData.stocks.user_investment_profile.personalized_investment_goals
-                  .expected_return.return_description
+                formData.user_investment_profile.personalized_investment_goals.expected_return
+                  .return_description
               "
             />
           </n-form-item>
@@ -127,12 +124,30 @@
               :max="100"
               :precision="2"
               v-model:value="
-                formData.stocks.user_investment_profile.personalized_investment_goals
-                  .expected_return.loss_tolerance_ratio
+                formData.user_investment_profile.personalized_investment_goals.expected_return
+                  .risk_tolerance.loss_tolerance_ratio
               "
             >
               <template #suffix> % </template>
             </n-input-number>
+          </n-form-item>
+          <n-form-item label="风险等级">
+            <n-select
+              :options="risk_options"
+              v-model:value="
+                formData.user_investment_profile.personalized_investment_goals.expected_return
+                  .risk_tolerance.risk_level
+              "
+            />
+          </n-form-item>
+          <n-form-item label="风险描述">
+            <n-input
+              clearable
+              v-model:value="
+                formData.user_investment_profile.personalized_investment_goals.expected_return
+                  .risk_tolerance.risk_description
+              "
+            />
           </n-form-item>
         </div>
 
@@ -142,7 +157,7 @@
             <n-input-number
               clearable
               :min="0"
-              v-model:value="formData.stocks.user_investment_profile.current_holdings.holding_count"
+              v-model:value="formData.user_investment_profile.current_holdings.holding_count"
             />
           </n-form-item>
         </div>
@@ -153,7 +168,7 @@
             <n-input-number
               clearable
               :min="0"
-              v-model:value="formData.stocks.user_investment_profile.watchlist.watchlist_count"
+              v-model:value="formData.user_investment_profile.watchlist.watchlist_count"
             />
           </n-form-item>
         </div>
@@ -176,52 +191,16 @@
 <script setup lang="ts">
   import { ref, reactive, onMounted, computed, watch } from 'vue';
   import { FormItemRule, useMessage } from 'naive-ui';
-  import { useUserStore } from '@/store/modules/user';
-  import { updateUserProfile, UserInfoType } from '@/api/user/user';
-  import { ResultEnum } from '@/enums/httpEnum';
+  import { useUser } from '@/store/modules/user';
+  import { UserInfoType } from '@/api/user/user';
   import { mockEmptyUserInfo } from '../../../mock/user';
 
   const formRef = ref<any>(null);
   const loading = ref(false);
   const message = useMessage();
-  const userStore = useUserStore();
+  const userStore = useUser();
 
-  const formData = reactive<UserInfoType>({
-    _id: '',
-    name: '',
-    account: '',
-    password: '',
-    stocks: {
-      user_investment_profile: {
-        personalized_investment_goals: {
-          investment_tenure: {
-            //short_term | medium_term | long_term
-            tenure_type: undefined,
-            specific_years: undefined,
-            tenure_description: undefined,
-          },
-
-          expected_return: {
-            annualized_return_rate: undefined,
-            //stable | moderate | flexible
-            return_stability: undefined,
-            return_description: undefined,
-            loss_tolerance_ratio: undefined,
-          },
-        },
-
-        current_holdings: {
-          holding_count: undefined,
-          holding_list: [],
-        },
-
-        watchlist: {
-          watchlist_count: undefined,
-          watchlist_list: [],
-        },
-      },
-    },
-  });
+  const formData = reactive<UserInfoType>(mockEmptyUserInfo);
 
   const formRules = {
     password: {
@@ -253,16 +232,35 @@
 
   const stability_options = [
     {
-      label: '稳定',
+      label: '稳定优先',
       value: 'stable',
     },
     {
-      label: '适中',
+      label: '平衡',
       value: 'moderate',
     },
     {
-      label: '弹性',
+      label: '灵活可变',
       value: 'flexible',
+    },
+  ];
+
+  const risk_options = [
+    {
+      label: '保守',
+      value: 'conservative',
+    },
+    {
+      label: '平衡',
+      value: 'moderate',
+    },
+    {
+      label: '进取',
+      value: 'aggressive',
+    },
+    {
+      label: '激进',
+      value: 'radical',
     },
   ];
 
@@ -286,28 +284,35 @@
   });
 
   onMounted(async () => {
-    // const userInfo = userStore.getUserInfo;
-    const userInfo = mockEmptyUserInfo;
-    if (!userInfo) {
-      message.error('网络异常，请重试。');
-      return;
-    }
-    Object.assign(formData, userInfo);
+    const response = await userStore.fetchUserInvestmentProfile();
+    if (response.code == 0) {
+      const userInfo = {
+        _id: '',
+        name: userStore.getName,
+        account: userStore.getAccount,
+        password: userStore.getPassword,
+        user_investment_profile: userStore.getUserInvestmentProfile,
+        status: 'active',
+        date: '',
+      };
+      Object.assign(formData, userInfo);
+    } else message.error(response.msg);
   });
 
   const handleSubmit = async () => {
     const valid = await formRef.value.validate();
-    if (!valid) return;
+    if (!valid) {
+      message.error('信息无效');
+      return;
+    }
 
     loading.value = true;
+    userStore.setUserInfo(formData);
+
     try {
-      const { code, msg } = updateUserProfile(formData);
-      if (code === ResultEnum.SUCCESS) {
-        message.success('信息修改成功');
-        userStore.setUserInfo(formData);
-      } else {
-        message.error(msg || '修改失败，请重试');
-      }
+      const response = await userStore.updateUserInvestmentProfile();
+      if (response.code == 0) message.success(response.msg);
+      else message.error(response.msg);
     } catch (e) {
       message.error('网络异常，修改失败');
     } finally {
