@@ -39,12 +39,7 @@ export interface InvestmentProfileType {
 
   watchlist: {
     watchlist_count: number | undefined;
-    watchlist_list: {
-      stock_code: string;
-      stock_name: string;
-      add_time: string;
-      watch_remark: string;
-    }[];
+    watchlist_list: WatchlistStockType[];
   };
 }
 
@@ -53,9 +48,32 @@ export interface StockType {
   stock_name: string;
   holding_quantity: number;
   purchase_price: number;
-  purchase_time: string;
+  purchase_time: string | number;
   holding_remark?: string;
 }
+
+export interface WatchlistStockType {
+  stock_code: string;
+  stock_name: string;
+  add_time: string | number;
+  watch_remark: string;
+}
+
+export const emptyWatchlistStock = {
+  stock_code: '',
+  stock_name: '',
+  add_time: null,
+  watch_remark: '',
+};
+
+export const emptyStock = {
+  stock_code: '',
+  stock_name: '',
+  holding_quantity: 0,
+  purchase_price: 0,
+  purchase_time: null,
+  holding_remark: '',
+};
 
 /**
  * @description: 获取用户信息
@@ -93,12 +111,10 @@ export interface LoginParams {
  * @description: 用户登录
  */
 export async function login(params: LoginParams) {
-  console.log('请求：login\n' + '参数：' + params);
   try {
     const result = await request.post('/api/user/login', {
       ...params,
     });
-    console.log('响应：\n' + JSON.stringify(result, null, 2));
     return result.data ?? badResponse;
   } catch (error) {
     console.error(error);
@@ -121,7 +137,6 @@ export async function register(params: RegisterParams) {
     const result = await request.post('/api/user/register', {
       ...params,
     });
-    console.log('响应：\n' + JSON.stringify(result, null, 2));
     return result.data ?? badResponse;
   } catch (error) {
     console.error(error);
@@ -130,14 +145,12 @@ export async function register(params: RegisterParams) {
 }
 
 export async function getUserInvestmentProfile(token: string) {
-  console.log('请求：getUserInvestmentProfile\n' + 'token：' + token);
   try {
     const result = await request.get('/api/user/investment/profile', {
       headers: {
         Authorization: token,
       },
     });
-    console.log('响应：\n' + JSON.stringify(result, null, 2));
     return result.data ?? badResponse;
   } catch (error) {
     console.error(error);
@@ -156,14 +169,12 @@ export async function updateUserInvestmentProfile(
   token: string,
   params: UpdateUserInvestmentProfileParams
 ) {
-  console.log('请求：updateUserInvestmentProfile\n' + 'token：' + token);
   try {
     const result = await request.post('/api/user/investment/update_profile', params, {
       headers: {
         Authorization: token,
       },
     });
-    console.log('响应：\n' + JSON.stringify(result, null, 2));
     return result.data ?? badResponse;
   } catch (error) {
     console.error(error);

@@ -153,24 +153,160 @@
 
         <div class="form-block">
           <span class="block-title">持仓情况</span>
-          <n-form-item label="数量">
-            <n-input-number
-              clearable
-              :min="0"
-              v-model:value="formData.user_investment_profile.current_holdings.holding_count"
-            />
-          </n-form-item>
+          <div class="count-input">
+            <n-form-item label="数量">
+              <n-input-number
+                clearable
+                :min="0"
+                v-model:value="formData.user_investment_profile.current_holdings.holding_count"
+              />
+            </n-form-item>
+            <n-button @click="changeHoldingCount">确认</n-button>
+          </div>
+          <div class="form-group">
+            <n-card
+              class="stock-card"
+              closable
+              v-for="(stock, index) in formData.user_investment_profile.current_holdings
+                .holding_list"
+              :key="index"
+              @close="deleteHoldingStock(stock)"
+            >
+              <n-form-item label="股票代码">
+                <n-input clearable v-model:value="stock.stock_code" />
+              </n-form-item>
+              <n-form-item label="股票名称">
+                <n-input clearable v-model:value="stock.stock_name" />
+              </n-form-item>
+              <n-form-item label="持有数量">
+                <n-input-number clearable :min="0" v-model:value="stock.holding_quantity" />
+              </n-form-item>
+              <n-form-item label="买入价格">
+                <n-input-number
+                  clearable
+                  :min="0"
+                  :precision="2"
+                  v-model:value="stock.purchase_price"
+                />
+              </n-form-item>
+              <n-form-item label="买入时间">
+                <n-date-picker type="date" clearable v-model:value="stock.purchase_time" />
+              </n-form-item>
+              <n-form-item label="股票描述">
+                <n-input clearable v-model:value="stock.holding_remark" />
+              </n-form-item>
+            </n-card>
+            <n-button text @click="addHoldingStock" style="font-size: 100px; padding: 0">
+              <n-icon>
+                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <!-- 卡片主体 -->
+                  <rect
+                    x="3"
+                    y="3"
+                    width="18"
+                    height="18"
+                    rx="2"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+
+                  <!-- 加号符号 -->
+                  <line
+                    x1="12"
+                    y1="7"
+                    x2="12"
+                    y2="17"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <line
+                    x1="7"
+                    y1="12"
+                    x2="17"
+                    y2="12"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </n-icon>
+            </n-button>
+          </div>
         </div>
 
         <div class="form-block">
           <span class="block-title">自选股信息</span>
-          <n-form-item label="数量">
-            <n-input-number
-              clearable
-              :min="0"
-              v-model:value="formData.user_investment_profile.watchlist.watchlist_count"
-            />
-          </n-form-item>
+          <div class="count-input">
+            <n-form-item label="数量">
+              <n-input-number
+                clearable
+                :min="0"
+                v-model:value="formData.user_investment_profile.watchlist.watchlist_count"
+              />
+            </n-form-item>
+            <n-button @click="changeWatchlistCount">确认</n-button>
+          </div>
+          <div class="form-group">
+            <n-card
+              class="stock-card"
+              closable
+              v-for="(stock, index) in formData.user_investment_profile.watchlist.watchlist_list"
+              :key="index"
+              @close="deleteWatchlistStock(stock)"
+            >
+              <n-form-item label="股票代码">
+                <n-input clearable v-model:value="stock.stock_code" />
+              </n-form-item>
+              <n-form-item label="股票名称">
+                <n-input clearable v-model:value="stock.stock_name" />
+              </n-form-item>
+              <n-form-item label="添加时间">
+                <n-date-picker type="date" clearable v-model:value="stock.add_time" />
+              </n-form-item>
+              <n-form-item label="自选股描述">
+                <n-input clearable v-model:value="stock.watch_remark" />
+              </n-form-item>
+            </n-card>
+            <n-button text @click="addWatchlistStock" style="font-size: 100px; padding: 0">
+              <n-icon>
+                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <!-- 卡片主体 -->
+                  <rect
+                    x="3"
+                    y="3"
+                    width="18"
+                    height="18"
+                    rx="2"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  />
+
+                  <!-- 加号符号 -->
+                  <line
+                    x1="12"
+                    y1="7"
+                    x2="12"
+                    y2="17"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <line
+                    x1="7"
+                    y1="12"
+                    x2="17"
+                    y2="12"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </n-icon>
+            </n-button>
+          </div>
         </div>
       </n-form>
       <div class="form-actions">
@@ -192,8 +328,15 @@
   import { ref, reactive, onMounted, computed, watch } from 'vue';
   import { FormItemRule, useMessage } from 'naive-ui';
   import { useUser } from '@/store/modules/user';
-  import { UserInfoType } from '@/api/user/user';
+  import {
+    emptyStock,
+    emptyWatchlistStock,
+    StockType,
+    UserInfoType,
+    WatchlistStockType,
+  } from '@/api/user/user';
   import { mockEmptyUserInfo } from '../../../mock/user';
+  import { parseStr, parseTime } from '@/api/time';
 
   const formRef = ref<any>(null);
   const loading = ref(false);
@@ -264,6 +407,7 @@
     },
   ];
 
+  const allow_change_password = ref(false);
   const old_password = ref('');
   const confirm_password = ref('');
   const pass = computed(() => {
@@ -273,20 +417,94 @@
     } else return 'error';
   });
 
-  const allow_change_password = ref(false);
-
-  //能否修改密码的监视
-  const stopWatch = watch(pass, (newVal) => {
+  // 能否修改密码的监视
+  const stopWatchPassword = watch(pass, (newVal) => {
     if (newVal == 'success') {
       allow_change_password.value = true;
-      stopWatch();
+      stopWatchPassword();
     }
   });
+
+  const changeHoldingCount = () => {
+    while (
+      formData.user_investment_profile.current_holdings.holding_list.length <
+      (formData.user_investment_profile.current_holdings.holding_count ?? 0)
+    ) {
+      formData.user_investment_profile.current_holdings.holding_list.push(emptyStock);
+    }
+
+    if (
+      formData.user_investment_profile.current_holdings.holding_list.length >
+      (formData.user_investment_profile.current_holdings.holding_count ?? 0)
+    ) {
+      if (confirm('当前操作可能会引起数据丢失')) {
+        while (
+          formData.user_investment_profile.current_holdings.holding_list.length >
+          (formData.user_investment_profile.current_holdings.holding_count ?? 0)
+        ) {
+          formData.user_investment_profile.current_holdings.holding_list.pop();
+        }
+      }
+    }
+  };
+
+  const deleteHoldingStock = (stock: StockType) => {
+    if (!formData.user_investment_profile.current_holdings.holding_count) return;
+    formData.user_investment_profile.current_holdings.holding_count--;
+    const i = formData.user_investment_profile.current_holdings.holding_list.findIndex((s) => {
+      return s == stock;
+    });
+    formData.user_investment_profile.current_holdings.holding_list.splice(i, 1);
+  };
+
+  const addHoldingStock = () => {
+    formData.user_investment_profile.current_holdings.holding_count =
+      (formData.user_investment_profile.current_holdings.holding_count ?? 0) + 1;
+    formData.user_investment_profile.current_holdings.holding_list.push(emptyStock);
+  };
+
+  const changeWatchlistCount = () => {
+    while (
+      formData.user_investment_profile.watchlist.watchlist_list.length <
+      (formData.user_investment_profile.watchlist.watchlist_count ?? 0)
+    ) {
+      formData.user_investment_profile.watchlist.watchlist_list.push(emptyWatchlistStock);
+    }
+
+    if (
+      formData.user_investment_profile.watchlist.watchlist_list.length >
+      (formData.user_investment_profile.watchlist.watchlist_count ?? 0)
+    ) {
+      if (confirm('当前操作可能会引起数据丢失')) {
+        while (
+          formData.user_investment_profile.watchlist.watchlist_list.length >
+          (formData.user_investment_profile.watchlist.watchlist_count ?? 0)
+        ) {
+          formData.user_investment_profile.watchlist.watchlist_list.pop();
+        }
+      }
+    }
+  };
+
+  const deleteWatchlistStock = (stock: WatchlistStockType) => {
+    if (!formData.user_investment_profile.watchlist.watchlist_count) return;
+    formData.user_investment_profile.watchlist.watchlist_count--;
+    const i = formData.user_investment_profile.watchlist.watchlist_list.findIndex((s) => {
+      return s == stock;
+    });
+    formData.user_investment_profile.watchlist.watchlist_list.splice(i, 1);
+  };
+
+  const addWatchlistStock = () => {
+    formData.user_investment_profile.watchlist.watchlist_count =
+      (formData.user_investment_profile.watchlist.watchlist_count ?? 0) + 1;
+    formData.user_investment_profile.watchlist.watchlist_list.push(emptyStock);
+  };
 
   onMounted(async () => {
     const response = await userStore.fetchUserInvestmentProfile();
     if (response.code == 0) {
-      const userInfo = {
+      const originalUserInfo = {
         _id: '',
         name: userStore.getName,
         account: userStore.getAccount,
@@ -295,9 +513,31 @@
         status: 'active',
         date: '',
       };
+      const userInfo = { ...originalUserInfo };
+      transStringToTime(userInfo);
       Object.assign(formData, userInfo);
     } else message.error(response.msg);
   });
+
+  // [读入数据时]转换时间格式
+  const transStringToTime = (userInfo: UserInfoType) => {
+    userInfo.user_investment_profile.current_holdings.holding_list.forEach((stock) => {
+      stock.purchase_time = parseTime(stock.purchase_time);
+    });
+    userInfo.user_investment_profile.watchlist.watchlist_list.forEach((stock) => {
+      stock.add_time = parseTime(stock.add_time);
+    });
+  };
+
+  // [保存信息时]转换时间格式
+  const transTimeToString = (userInfo: UserInfoType) => {
+    userInfo.user_investment_profile.current_holdings.holding_list.forEach((stock) => {
+      stock.purchase_time = parseStr(stock.purchase_time);
+    });
+    userInfo.user_investment_profile.watchlist.watchlist_list.forEach((stock) => {
+      stock.add_time = parseStr(stock.add_time);
+    });
+  };
 
   const handleSubmit = async () => {
     const valid = await formRef.value.validate();
@@ -307,7 +547,9 @@
     }
 
     loading.value = true;
-    userStore.setUserInfo(formData);
+    const transData = JSON.parse(JSON.stringify(formData));
+    transTimeToString(transData);
+    userStore.setUserInfo(transData);
 
     try {
       const response = await userStore.updateUserInvestmentProfile();
@@ -333,7 +575,28 @@
 
   .form-block {
     flex: 1;
-    padding: 0 16px;
+    padding: 16px;
+    border: 1px solid lightgray;
+  }
+
+  .count-input {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .stock-card {
+    background-color: ghostwhite;
+    border: 1px solid lightgray;
+    width: 30%;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+    overflow: auto;
   }
 
   .block-title {
@@ -348,19 +611,19 @@
     flex-direction: column;
     position: relative;
     flex: 1;
+    gap: 20px;
   }
 
   .profile-form {
     margin-top: 20px;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     flex: 1;
+    gap: 20px;
   }
 
   .form-actions {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
+    padding: 16px;
   }
 
   .saveButton {

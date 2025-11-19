@@ -62,7 +62,6 @@ interface FetchMessagesByDayParams {
 
 export async function fetchMessageByDay(token: string, params: FetchMessagesByDayParams) {
   try {
-    console.log('fetchMessage:\n' + 'token=' + token + '\n' + 'date=' + params.day);
     const result = await request.post('/api/message/by_day', params, {
       headers: {
         Authorization: token,

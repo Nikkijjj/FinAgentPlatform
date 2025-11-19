@@ -181,7 +181,7 @@
   }
 
   .read {
-    background-color: lightgray;
+    background-color: ghostwhite;
   }
 
   .report-header {
