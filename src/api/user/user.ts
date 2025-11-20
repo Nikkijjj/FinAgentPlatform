@@ -48,14 +48,14 @@ export interface StockType {
   stock_name: string;
   holding_quantity: number;
   purchase_price: number;
-  purchase_time: string | number;
+  purchase_time: string | number | null;
   holding_remark?: string;
 }
 
 export interface WatchlistStockType {
   stock_code: string;
   stock_name: string;
-  add_time: string | number;
+  add_time: string | number | null;
   watch_remark: string;
 }
 

@@ -190,7 +190,12 @@
                 />
               </n-form-item>
               <n-form-item label="买入时间">
-                <n-date-picker type="date" clearable v-model:value="stock.purchase_time" />
+                <n-date-picker
+                  type="date"
+                  clearable
+                  v-if="isDataReady"
+                  v-model:value="stock.purchase_time"
+                />
               </n-form-item>
               <n-form-item label="股票描述">
                 <n-input clearable v-model:value="stock.holding_remark" />
@@ -263,7 +268,12 @@
                 <n-input clearable v-model:value="stock.stock_name" />
               </n-form-item>
               <n-form-item label="添加时间">
-                <n-date-picker type="date" clearable v-model:value="stock.add_time" />
+                <n-date-picker
+                  type="date"
+                  clearable
+                  v-if="isDataReady"
+                  v-model:value="stock.add_time"
+                />
               </n-form-item>
               <n-form-item label="自选股描述">
                 <n-input clearable v-model:value="stock.watch_remark" />
@@ -342,6 +352,8 @@
   const loading = ref(false);
   const message = useMessage();
   const userStore = useUser();
+
+  const isDataReady = ref(false);
 
   const formData = reactive<UserInfoType>(mockEmptyUserInfo);
 
@@ -460,7 +472,7 @@
   const addHoldingStock = () => {
     formData.user_investment_profile.current_holdings.holding_count =
       (formData.user_investment_profile.current_holdings.holding_count ?? 0) + 1;
-    formData.user_investment_profile.current_holdings.holding_list.push(emptyStock);
+    formData.user_investment_profile.current_holdings.holding_list.push({ ...emptyStock });
   };
 
   const changeWatchlistCount = () => {
@@ -498,7 +510,7 @@
   const addWatchlistStock = () => {
     formData.user_investment_profile.watchlist.watchlist_count =
       (formData.user_investment_profile.watchlist.watchlist_count ?? 0) + 1;
-    formData.user_investment_profile.watchlist.watchlist_list.push(emptyStock);
+    formData.user_investment_profile.watchlist.watchlist_list.push({ ...emptyWatchlistStock });
   };
 
   onMounted(async () => {
@@ -516,11 +528,12 @@
       const userInfo = { ...originalUserInfo };
       transStringToTime(userInfo);
       Object.assign(formData, userInfo);
+      isDataReady.value = true;
     } else message.error(response.msg);
   });
 
   // [读入数据时]转换时间格式
-  const transStringToTime = (userInfo: UserInfoType) => {
+  const transStringToTime = (userInfo) => {
     userInfo.user_investment_profile.current_holdings.holding_list.forEach((stock) => {
       stock.purchase_time = parseTime(stock.purchase_time);
     });
@@ -530,13 +543,13 @@
   };
 
   // [保存信息时]转换时间格式
-  const transTimeToString = (userInfo: UserInfoType) => {
-    userInfo.user_investment_profile.current_holdings.holding_list.forEach((stock) => {
+  const transTimeToString = (userInfo) => {
+    for (const stock of userInfo.user_investment_profile.current_holdings.holding_list) {
       stock.purchase_time = parseStr(stock.purchase_time);
-    });
-    userInfo.user_investment_profile.watchlist.watchlist_list.forEach((stock) => {
+    }
+    for (const stock of userInfo.user_investment_profile.watchlist.watchlist_list) {
       stock.add_time = parseStr(stock.add_time);
-    });
+    }
   };
 
   const handleSubmit = async () => {
