@@ -9,7 +9,7 @@
         label-width="80px"
         class="profile-form"
       >
-        <div class="form-block">
+        <n-card class="form-block">
           <span class="block-title">个人信息</span>
           <n-form-item label="昵称">
             <n-input v-model:value="formData.name" disabled />
@@ -49,9 +49,9 @@
               placeholder="请确认密码"
             />
           </n-form-item>
-        </div>
+        </n-card>
 
-        <div class="form-block">
+        <n-card class="form-block">
           <span class="block-title">个性化投资目标</span>
           <n-form-item label="投资类别">
             <n-select
@@ -81,9 +81,9 @@
               "
             />
           </n-form-item>
-        </div>
+        </n-card>
 
-        <div class="form-block">
+        <n-card class="form-block">
           <span class="block-title">投资期望</span>
           <n-form-item label="年利率">
             <n-input-number
@@ -149,9 +149,9 @@
               "
             />
           </n-form-item>
-        </div>
+        </n-card>
 
-        <div class="form-block">
+        <n-card class="form-block">
           <span class="block-title">持仓情况</span>
           <div class="count-input">
             <n-form-item label="数量">
@@ -170,7 +170,7 @@
               v-for="(stock, index) in formData.user_investment_profile.current_holdings
                 .holding_list"
               :key="index"
-              @close="deleteHoldingStock(stock)"
+              @close="deleteHoldingStock(index)"
             >
               <n-form-item label="股票代码">
                 <n-input clearable v-model:value="stock.stock_code" />
@@ -191,7 +191,7 @@
               </n-form-item>
               <n-form-item label="买入时间">
                 <n-date-picker
-                  type="date"
+                  type="datetime"
                   clearable
                   v-if="isDataReady"
                   v-model:value="stock.purchase_time"
@@ -239,9 +239,9 @@
               </n-icon>
             </n-button>
           </div>
-        </div>
+        </n-card>
 
-        <div class="form-block">
+        <n-card class="form-block">
           <span class="block-title">自选股信息</span>
           <div class="count-input">
             <n-form-item label="数量">
@@ -259,7 +259,7 @@
               closable
               v-for="(stock, index) in formData.user_investment_profile.watchlist.watchlist_list"
               :key="index"
-              @close="deleteWatchlistStock(stock)"
+              @close="deleteWatchlistStock(index)"
             >
               <n-form-item label="股票代码">
                 <n-input clearable v-model:value="stock.stock_code" />
@@ -269,7 +269,7 @@
               </n-form-item>
               <n-form-item label="添加时间">
                 <n-date-picker
-                  type="date"
+                  type="datetime"
                   clearable
                   v-if="isDataReady"
                   v-model:value="stock.add_time"
@@ -317,7 +317,7 @@
               </n-icon>
             </n-button>
           </div>
-        </div>
+        </n-card>
       </n-form>
       <div class="form-actions">
         <n-button
@@ -338,13 +338,7 @@
   import { ref, reactive, onMounted, computed, watch } from 'vue';
   import { FormItemRule, useMessage } from 'naive-ui';
   import { useUser } from '@/store/modules/user';
-  import {
-    emptyStock,
-    emptyWatchlistStock,
-    StockType,
-    UserInfoType,
-    WatchlistStockType,
-  } from '@/api/user/user';
+  import { emptyStock, emptyWatchlistStock, UserInfoType } from '@/api/user/user';
   import { mockEmptyUserInfo } from '../../../mock/user';
   import { parseStr, parseTime } from '@/api/time';
 
@@ -460,13 +454,10 @@
     }
   };
 
-  const deleteHoldingStock = (stock: StockType) => {
+  const deleteHoldingStock = (index: number) => {
     if (!formData.user_investment_profile.current_holdings.holding_count) return;
     formData.user_investment_profile.current_holdings.holding_count--;
-    const i = formData.user_investment_profile.current_holdings.holding_list.findIndex((s) => {
-      return s == stock;
-    });
-    formData.user_investment_profile.current_holdings.holding_list.splice(i, 1);
+    formData.user_investment_profile.current_holdings.holding_list.splice(index, 1);
   };
 
   const addHoldingStock = () => {
@@ -498,13 +489,10 @@
     }
   };
 
-  const deleteWatchlistStock = (stock: WatchlistStockType) => {
+  const deleteWatchlistStock = (index: number) => {
     if (!formData.user_investment_profile.watchlist.watchlist_count) return;
     formData.user_investment_profile.watchlist.watchlist_count--;
-    const i = formData.user_investment_profile.watchlist.watchlist_list.findIndex((s) => {
-      return s == stock;
-    });
-    formData.user_investment_profile.watchlist.watchlist_list.splice(i, 1);
+    formData.user_investment_profile.watchlist.watchlist_list.splice(index, 1);
   };
 
   const addWatchlistStock = () => {
@@ -514,33 +502,26 @@
   };
 
   onMounted(async () => {
-    const response = await userStore.fetchUserInvestmentProfile();
-    if (response.code == 0) {
-      const originalUserInfo = {
-        _id: '',
-        name: userStore.getName,
-        account: userStore.getAccount,
-        password: userStore.getPassword,
-        user_investment_profile: userStore.getUserInvestmentProfile,
-        status: 'active',
-        date: '',
-      };
-      const userInfo = { ...originalUserInfo };
-      transStringToTime(userInfo);
-      Object.assign(formData, userInfo);
-      isDataReady.value = true;
-    } else message.error(response.msg);
-  });
+    loading.value = true;
+    await userStore.initUserInvestmentProfile();
 
-  // [读入数据时]转换时间格式
-  const transStringToTime = (userInfo) => {
-    userInfo.user_investment_profile.current_holdings.holding_list.forEach((stock) => {
-      stock.purchase_time = parseTime(stock.purchase_time);
-    });
-    userInfo.user_investment_profile.watchlist.watchlist_list.forEach((stock) => {
-      stock.add_time = parseTime(stock.add_time);
-    });
-  };
+    const fetchedProfile = userStore.getUserInvestmentProfile;
+    Object.assign(formData.user_investment_profile, fetchedProfile);
+
+    for (const stock of formData.user_investment_profile.current_holdings.holding_list) {
+      if (typeof stock.purchase_time === 'string')
+        stock.purchase_time = parseTime(stock.purchase_time);
+    }
+    for (const stock of formData.user_investment_profile.watchlist.watchlist_list) {
+      if (typeof stock.add_time === 'string') stock.add_time = parseTime(stock.add_time);
+    }
+
+    formData.name = userStore.getName;
+    formData.account = userStore.getAccount;
+    formData.password = userStore.getPassword;
+    isDataReady.value = true;
+    loading.value = false;
+  });
 
   // [保存信息时]转换时间格式
   const transTimeToString = (userInfo) => {

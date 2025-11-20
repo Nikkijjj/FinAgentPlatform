@@ -21,6 +21,7 @@ export interface IUserState {
   avatar: string;
   permissions: any[];
   info: UserInfoType;
+  isLoaded: boolean;
 }
 
 export const useUserStore = defineStore({
@@ -31,6 +32,7 @@ export const useUserStore = defineStore({
     avatar: '',
     permissions: [],
     info: storage.get(CURRENT_USER, mockEmptyUserInfo),
+    isLoaded: false,
   }),
   getters: {
     getToken(): string {
@@ -82,6 +84,7 @@ export const useUserStore = defineStore({
     },
     setUserInfo(info: UserInfoType) {
       this.info = info;
+      storage.set(CURRENT_USER, info);
     },
     clearUserInfo() {
       this.info = mockEmptyUserInfo;
@@ -105,11 +108,30 @@ export const useUserStore = defineStore({
       return await register(params);
     },
 
+    // 初始化用户投资信息
+    async initUserInvestmentProfile() {
+      if (this.isLoaded) return;
+      const response = await this.fetchUserInvestmentProfile();
+      if (response.code === 0) {
+        const updatedInfo = {
+          ...this.info,
+          user_investment_profile: response.data,
+        };
+        this.setUserInfo(updatedInfo);
+        this.isLoaded = true;
+      } else {
+        const fallbackInfo = {
+          ...this.info,
+          user_investment_profile: mockEmptyUserInfo.user_investment_profile,
+        };
+        this.setUserInfo(fallbackInfo);
+        this.isLoaded = true;
+      }
+    },
+
     // 获取用户投资信息
     async fetchUserInvestmentProfile() {
-      const response = await getUserInvestmentProfile(this.token);
-      if (response.code == 0) this.setInvestmentProfile(response.data);
-      return response;
+      return await getUserInvestmentProfile(this.token);
     },
 
     // 更新用户投资信息

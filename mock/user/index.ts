@@ -1,6 +1,7 @@
 import Mock from 'mockjs';
 import { resultSuccess } from '../_util';
 import { defineMock } from '@alova/mock';
+import { UserInfoType } from '@/api/user/user';
 
 const Random = Mock.Random;
 
@@ -38,7 +39,7 @@ const adminInfo = {
   ],
 };
 
-export const mockEmptyUserInfo = {
+export const mockEmptyUserInfo: UserInfoType = {
   _id: '',
   name: '',
   account: '',
