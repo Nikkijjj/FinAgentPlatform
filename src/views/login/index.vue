@@ -33,8 +33,10 @@
           <n-form-item path="username" class="username-item">
             <n-input
               v-model:value="formInline.username"
-              placeholder="请输入用户名"
+              placeholder="请输入账号"
               class="login-input"
+              ref="inputAccount"
+              @keyup="autoWrap($event)"
             >
               <template #prefix>
                 <n-icon size="18" color="#808695">
@@ -50,6 +52,8 @@
               showPasswordOn="click"
               placeholder="请输入密码"
               class="login-input"
+              ref="inputPassword"
+              @keyup="autoWrap($event)"
             >
               <template #prefix>
                 <n-icon size="18" color="#808695">
@@ -140,6 +144,8 @@
   });
 
   const formRef = ref();
+  const inputAccount = ref<HTMLElement>();
+  const inputPassword = ref<HTMLElement>();
   const message = useMessage();
   const loading = ref(false);
   const autoLogin = ref(true);
@@ -199,6 +205,19 @@
         message.error('请填写完整信息，并且进行验证码校验');
       }
     });
+  };
+
+  const autoWrap = (e) => {
+    if (e.keyCode !== 13) return;
+    if (formInline.username === '') {
+      inputAccount.value?.focus();
+      return;
+    }
+    if (formInline.password === '') {
+      inputPassword.value?.focus();
+      return;
+    }
+    handleSubmit(e);
   };
 </script>
 

@@ -9,315 +9,330 @@
         label-width="80px"
         class="profile-form"
       >
-        <n-card class="form-block">
-          <span class="block-title">个人信息</span>
-          <n-form-item label="昵称">
-            <n-input v-model:value="formData.name" disabled />
-          </n-form-item>
-          <n-form-item label="账号">
-            <n-input v-model:value="formData.account" disabled />
-          </n-form-item>
-          <n-form-item label="修改密码" path="password" v-show="allow_change_password">
-            <n-input
-              type="password"
-              clearable
-              showPasswordOn="click"
-              v-model:value="formData.password"
-              placeholder="输入新密码"
-            />
-          </n-form-item>
-          <n-form-item label="密码" v-show="!allow_change_password">
-            <n-input
-              type="password"
-              clearable
-              showPasswordOn="click"
-              :status="pass"
-              v-model:value="old_password"
-              placeholder="内容已隐藏（请先输入原密码）"
-            />
-          </n-form-item>
-          <n-form-item
-            label="确认新密码"
-            path="password"
-            :style="{ visibility: allow_change_password ? 'visible' : 'hidden' }"
-          >
-            <n-input
-              type="password"
-              clearable
-              showPasswordOn="click"
-              v-model:value="confirm_password"
-              placeholder="请确认密码"
-            />
-          </n-form-item>
-        </n-card>
-
-        <n-card class="form-block">
-          <span class="block-title">个性化投资目标</span>
-          <n-form-item label="投资类别">
-            <n-select
-              :options="term_options"
-              v-model:value="
-                formData.user_investment_profile.personalized_investment_goals.investment_tenure
-                  .tenure_type
-              "
-            />
-          </n-form-item>
-          <n-form-item label="投资年限">
-            <n-input-number
-              clearable
-              :min="0"
-              v-model:value="
-                formData.user_investment_profile.personalized_investment_goals.investment_tenure
-                  .specific_years
-              "
-            />
-          </n-form-item>
-          <n-form-item label="投资描述">
-            <n-input
-              clearable
-              v-model:value="
-                formData.user_investment_profile.personalized_investment_goals.investment_tenure
-                  .tenure_description
-              "
-            />
-          </n-form-item>
-        </n-card>
-
-        <n-card class="form-block">
-          <span class="block-title">投资期望</span>
-          <n-form-item label="年利率">
-            <n-input-number
-              clearable
-              :min="0"
-              :max="100"
-              :precision="2"
-              v-model:value="
-                formData.user_investment_profile.personalized_investment_goals.expected_return
-                  .annualized_return_rate
-              "
-            >
-              <template #suffix> % </template>
-            </n-input-number>
-          </n-form-item>
-          <n-form-item label="收益稳定性">
-            <n-select
-              :options="stability_options"
-              v-model:value="
-                formData.user_investment_profile.personalized_investment_goals.expected_return
-                  .return_stability
-              "
-            />
-          </n-form-item>
-          <n-form-item label="收益描述">
-            <n-input
-              clearable
-              v-model:value="
-                formData.user_investment_profile.personalized_investment_goals.expected_return
-                  .return_description
-              "
-            />
-          </n-form-item>
-          <n-form-item label="可承受亏损率">
-            <n-input-number
-              clearable
-              :min="0"
-              :max="100"
-              :precision="2"
-              v-model:value="
-                formData.user_investment_profile.personalized_investment_goals.expected_return
-                  .risk_tolerance.loss_tolerance_ratio
-              "
-            >
-              <template #suffix> % </template>
-            </n-input-number>
-          </n-form-item>
-          <n-form-item label="风险等级">
-            <n-select
-              :options="risk_options"
-              v-model:value="
-                formData.user_investment_profile.personalized_investment_goals.expected_return
-                  .risk_tolerance.risk_level
-              "
-            />
-          </n-form-item>
-          <n-form-item label="风险描述">
-            <n-input
-              clearable
-              v-model:value="
-                formData.user_investment_profile.personalized_investment_goals.expected_return
-                  .risk_tolerance.risk_description
-              "
-            />
-          </n-form-item>
-        </n-card>
-
-        <n-card class="form-block">
-          <span class="block-title">持仓情况</span>
-          <div class="count-input">
-            <n-form-item label="数量">
-              <n-input-number
-                clearable
-                :min="0"
-                v-model:value="formData.user_investment_profile.current_holdings.holding_count"
-              />
-            </n-form-item>
-            <n-button @click="changeHoldingCount">确认</n-button>
-          </div>
-          <div class="form-group">
-            <n-card
-              class="stock-card"
-              closable
-              v-for="(stock, index) in formData.user_investment_profile.current_holdings
-                .holding_list"
-              :key="index"
-              @close="deleteHoldingStock(index)"
-            >
-              <n-form-item label="股票代码">
-                <n-input clearable v-model:value="stock.stock_code" />
+        <n-collapse default-expanded-names="[1,2,3,4,5]">
+          <n-collapse-item title="个人信息" name="1">
+            <n-card class="form-block">
+              <n-form-item label="昵称">
+                <n-input v-model:value="formData.name" disabled />
               </n-form-item>
-              <n-form-item label="股票名称">
-                <n-input clearable v-model:value="stock.stock_name" />
+              <n-form-item label="账号">
+                <n-input v-model:value="formData.account" disabled />
               </n-form-item>
-              <n-form-item label="持有数量">
-                <n-input-number clearable :min="0" v-model:value="stock.holding_quantity" />
+              <n-form-item label="修改密码" path="password" v-show="allow_change_password">
+                <n-input
+                  type="password"
+                  clearable
+                  showPasswordOn="click"
+                  v-model:value="formData.password"
+                  placeholder="输入新密码"
+                />
               </n-form-item>
-              <n-form-item label="买入价格">
+              <n-form-item label="密码" v-show="!allow_change_password">
+                <n-input
+                  type="password"
+                  clearable
+                  showPasswordOn="click"
+                  :status="pass"
+                  v-model:value="old_password"
+                  placeholder="内容已隐藏（请先输入原密码）"
+                />
+              </n-form-item>
+              <n-form-item
+                label="确认新密码"
+                path="password"
+                :style="{ visibility: allow_change_password ? 'visible' : 'hidden' }"
+              >
+                <n-input
+                  type="password"
+                  clearable
+                  showPasswordOn="click"
+                  v-model:value="confirm_password"
+                  placeholder="请确认密码"
+                />
+              </n-form-item>
+            </n-card>
+          </n-collapse-item>
+          <n-collapse-item title="个性化投资目标" name="2">
+            <n-card class="form-block">
+              <n-form-item label="投资类别">
+                <n-select
+                  :options="term_options"
+                  v-model:value="
+                    formData.user_investment_profile.personalized_investment_goals.investment_tenure
+                      .tenure_type
+                  "
+                />
+              </n-form-item>
+              <n-form-item label="投资年限">
                 <n-input-number
                   clearable
                   :min="0"
+                  v-model:value="
+                    formData.user_investment_profile.personalized_investment_goals.investment_tenure
+                      .specific_years
+                  "
+                />
+              </n-form-item>
+              <n-form-item label="投资描述">
+                <n-input
+                  clearable
+                  autosize
+                  v-model:value="
+                    formData.user_investment_profile.personalized_investment_goals.investment_tenure
+                      .tenure_description
+                  "
+                />
+              </n-form-item>
+            </n-card>
+          </n-collapse-item>
+          <n-collapse-item title="投资期望" name="3">
+            <n-card class="form-block">
+              <n-form-item label="年利率">
+                <n-input-number
+                  clearable
+                  :min="0"
+                  :max="100"
                   :precision="2"
-                  v-model:value="stock.purchase_price"
+                  v-model:value="
+                    formData.user_investment_profile.personalized_investment_goals.expected_return
+                      .annualized_return_rate
+                  "
+                >
+                  <template #suffix> % </template>
+                </n-input-number>
+              </n-form-item>
+              <n-form-item label="收益稳定性">
+                <n-select
+                  :options="stability_options"
+                  v-model:value="
+                    formData.user_investment_profile.personalized_investment_goals.expected_return
+                      .return_stability
+                  "
                 />
               </n-form-item>
-              <n-form-item label="买入时间">
-                <n-date-picker
-                  type="datetime"
+              <n-form-item label="收益描述">
+                <n-input
                   clearable
-                  v-if="isDataReady"
-                  v-model:value="stock.purchase_time"
+                  v-model:value="
+                    formData.user_investment_profile.personalized_investment_goals.expected_return
+                      .return_description
+                  "
                 />
               </n-form-item>
-              <n-form-item label="股票描述">
-                <n-input clearable v-model:value="stock.holding_remark" />
+              <n-form-item label="可承受亏损率">
+                <n-input-number
+                  clearable
+                  :min="0"
+                  :max="100"
+                  :precision="2"
+                  v-model:value="
+                    formData.user_investment_profile.personalized_investment_goals.expected_return
+                      .risk_tolerance.loss_tolerance_ratio
+                  "
+                >
+                  <template #suffix> % </template>
+                </n-input-number>
+              </n-form-item>
+              <n-form-item label="风险等级">
+                <n-select
+                  :options="risk_options"
+                  v-model:value="
+                    formData.user_investment_profile.personalized_investment_goals.expected_return
+                      .risk_tolerance.risk_level
+                  "
+                />
+              </n-form-item>
+              <n-form-item label="风险描述">
+                <n-input
+                  clearable
+                  v-model:value="
+                    formData.user_investment_profile.personalized_investment_goals.expected_return
+                      .risk_tolerance.risk_description
+                  "
+                />
               </n-form-item>
             </n-card>
-            <n-button text @click="addHoldingStock" style="font-size: 100px; padding: 0">
-              <n-icon>
-                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <!-- 卡片主体 -->
-                  <rect
-                    x="3"
-                    y="3"
-                    width="18"
-                    height="18"
-                    rx="2"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
+          </n-collapse-item>
+          <n-collapse-item title="持仓情况" name="4">
+            <n-card class="form-block">
+              <div class="count-input">
+                <n-form-item label="数量">
+                  <n-input-number
+                    clearable
+                    :min="0"
+                    v-model:value="formData.user_investment_profile.current_holdings.holding_count"
                   />
+                </n-form-item>
+                <n-button @click="changeHoldingCount">确认</n-button>
+              </div>
+              <div class="form-group">
+                <n-card
+                  class="stock-card"
+                  closable
+                  v-for="(stock, index) in formData.user_investment_profile.current_holdings
+                    .holding_list"
+                  :key="index"
+                  @close="deleteHoldingStock(index)"
+                >
+                  <n-form-item label="股票代码">
+                    <n-input clearable v-model:value="stock.stock_code" />
+                  </n-form-item>
+                  <n-form-item label="股票名称">
+                    <n-input clearable v-model:value="stock.stock_name" />
+                  </n-form-item>
+                  <n-form-item label="持有数量">
+                    <n-input-number clearable :min="0" v-model:value="stock.holding_quantity" />
+                  </n-form-item>
+                  <n-form-item label="买入价格">
+                    <n-input-number
+                      clearable
+                      :min="0"
+                      :precision="2"
+                      v-model:value="stock.purchase_price"
+                    />
+                  </n-form-item>
+                  <n-form-item label="买入时间">
+                    <n-date-picker
+                      type="datetime"
+                      clearable
+                      v-if="isDataReady"
+                      v-model:value="stock.purchase_time"
+                    />
+                  </n-form-item>
+                  <n-form-item label="股票描述">
+                    <n-input clearable autosize v-model:value="stock.holding_remark" />
+                  </n-form-item>
+                </n-card>
+                <n-button text @click="addHoldingStock" style="font-size: 100px; padding: 0">
+                  <n-icon>
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <!-- 卡片主体 -->
+                      <rect
+                        x="3"
+                        y="3"
+                        width="18"
+                        height="18"
+                        rx="2"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      />
 
-                  <!-- 加号符号 -->
-                  <line
-                    x1="12"
-                    y1="7"
-                    x2="12"
-                    y2="17"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                  />
-                  <line
-                    x1="7"
-                    y1="12"
-                    x2="17"
-                    y2="12"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                  />
-                </svg>
-              </n-icon>
-            </n-button>
-          </div>
-        </n-card>
-
-        <n-card class="form-block">
-          <span class="block-title">自选股信息</span>
-          <div class="count-input">
-            <n-form-item label="数量">
-              <n-input-number
-                clearable
-                :min="0"
-                v-model:value="formData.user_investment_profile.watchlist.watchlist_count"
-              />
-            </n-form-item>
-            <n-button @click="changeWatchlistCount">确认</n-button>
-          </div>
-          <div class="form-group">
-            <n-card
-              class="stock-card"
-              closable
-              v-for="(stock, index) in formData.user_investment_profile.watchlist.watchlist_list"
-              :key="index"
-              @close="deleteWatchlistStock(index)"
-            >
-              <n-form-item label="股票代码">
-                <n-input clearable v-model:value="stock.stock_code" />
-              </n-form-item>
-              <n-form-item label="股票名称">
-                <n-input clearable v-model:value="stock.stock_name" />
-              </n-form-item>
-              <n-form-item label="添加时间">
-                <n-date-picker
-                  type="datetime"
-                  clearable
-                  v-if="isDataReady"
-                  v-model:value="stock.add_time"
-                />
-              </n-form-item>
-              <n-form-item label="自选股描述">
-                <n-input clearable v-model:value="stock.watch_remark" />
-              </n-form-item>
+                      <!-- 加号符号 -->
+                      <line
+                        x1="12"
+                        y1="7"
+                        x2="12"
+                        y2="17"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      />
+                      <line
+                        x1="7"
+                        y1="12"
+                        x2="17"
+                        y2="12"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      />
+                    </svg>
+                  </n-icon>
+                </n-button>
+              </div>
             </n-card>
-            <n-button text @click="addWatchlistStock" style="font-size: 100px; padding: 0">
-              <n-icon>
-                <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <!-- 卡片主体 -->
-                  <rect
-                    x="3"
-                    y="3"
-                    width="18"
-                    height="18"
-                    rx="2"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
+          </n-collapse-item>
+          <n-collapse-item title="自选股信息" name="5">
+            <n-card class="form-block">
+              <div class="count-input">
+                <n-form-item label="数量">
+                  <n-input-number
+                    clearable
+                    :min="0"
+                    v-model:value="formData.user_investment_profile.watchlist.watchlist_count"
                   />
+                </n-form-item>
+                <n-button @click="changeWatchlistCount">确认</n-button>
+              </div>
+              <div class="form-group">
+                <n-card
+                  class="stock-card"
+                  closable
+                  v-for="(stock, index) in formData.user_investment_profile.watchlist
+                    .watchlist_list"
+                  :key="index"
+                  @close="deleteWatchlistStock(index)"
+                >
+                  <n-form-item label="股票代码">
+                    <n-input clearable v-model:value="stock.stock_code" />
+                  </n-form-item>
+                  <n-form-item label="股票名称">
+                    <n-input clearable v-model:value="stock.stock_name" />
+                  </n-form-item>
+                  <n-form-item label="添加时间">
+                    <n-date-picker
+                      type="datetime"
+                      clearable
+                      v-if="isDataReady"
+                      v-model:value="stock.add_time"
+                    />
+                  </n-form-item>
+                  <n-form-item label="自选股描述">
+                    <n-input clearable autosize v-model:value="stock.watch_remark" />
+                  </n-form-item>
+                </n-card>
+                <n-button text @click="addWatchlistStock" style="font-size: 100px; padding: 0">
+                  <n-icon>
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <!-- 卡片主体 -->
+                      <rect
+                        x="3"
+                        y="3"
+                        width="18"
+                        height="18"
+                        rx="2"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      />
 
-                  <!-- 加号符号 -->
-                  <line
-                    x1="12"
-                    y1="7"
-                    x2="12"
-                    y2="17"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                  />
-                  <line
-                    x1="7"
-                    y1="12"
-                    x2="17"
-                    y2="12"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                  />
-                </svg>
-              </n-icon>
-            </n-button>
-          </div>
-        </n-card>
+                      <!-- 加号符号 -->
+                      <line
+                        x1="12"
+                        y1="7"
+                        x2="12"
+                        y2="17"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      />
+                      <line
+                        x1="7"
+                        y1="12"
+                        x2="17"
+                        y2="12"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      />
+                    </svg>
+                  </n-icon>
+                </n-button>
+              </div>
+            </n-card>
+          </n-collapse-item>
+        </n-collapse>
       </n-form>
       <div class="form-actions">
         <n-button
@@ -436,7 +451,7 @@
       formData.user_investment_profile.current_holdings.holding_list.length <
       (formData.user_investment_profile.current_holdings.holding_count ?? 0)
     ) {
-      formData.user_investment_profile.current_holdings.holding_list.push(emptyStock);
+      formData.user_investment_profile.current_holdings.holding_list.push({ ...emptyStock });
     }
 
     if (
@@ -471,7 +486,7 @@
       formData.user_investment_profile.watchlist.watchlist_list.length <
       (formData.user_investment_profile.watchlist.watchlist_count ?? 0)
     ) {
-      formData.user_investment_profile.watchlist.watchlist_list.push(emptyWatchlistStock);
+      formData.user_investment_profile.watchlist.watchlist_list.push({ ...emptyWatchlistStock });
     }
 
     if (

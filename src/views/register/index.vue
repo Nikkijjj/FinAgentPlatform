@@ -32,6 +32,12 @@
   }
 
   const userStore = useUserStore();
+  const router = useRouter();
+
+  const inputName = ref();
+  const inputAccount = ref();
+  const inputPassword = ref();
+  const confirmPassword = ref();
 
   const message = useMessage();
   const loading = ref(false);
@@ -56,8 +62,6 @@
       trigger: 'blur',
     },
   };
-
-  const router = useRouter();
 
   const submitUserInfo = (e) => {
     e.preventDefault();
@@ -92,6 +96,27 @@
         message.error('注册未通过，请重试。');
       }
     });
+  };
+
+  const autoWrap = (e) => {
+    if (e.keyCode !== 13) return;
+    if (userInfo.name === '') {
+      inputName.value?.focus();
+      return;
+    }
+    if (userInfo.account === '') {
+      inputAccount.value?.focus();
+      return;
+    }
+    if (userInfo.password === '') {
+      inputPassword.value?.focus();
+      return;
+    }
+    if (userInfo.confirmPassword === '') {
+      confirmPassword.value?.focus();
+      return;
+    }
+    submitUserInfo(e);
   };
 </script>
 
@@ -128,7 +153,13 @@
           class="login-form"
         >
           <n-form-item path="name" class="username-item">
-            <n-input v-model:value="userInfo.name" placeholder="请输入姓名" class="login-input">
+            <n-input
+              v-model:value="userInfo.name"
+              placeholder="请输入姓名"
+              ref="inputName"
+              @keyup="autoWrap($event)"
+              class="login-input"
+            >
               <template #prefix>
                 <n-icon size="18" color="#808695">
                   <PersonOutline />
@@ -139,7 +170,9 @@
           <n-form-item path="account" class="username-item">
             <n-input
               v-model:value="userInfo.account"
-              placeholder="请输入用户名"
+              placeholder="请输入账号"
+              ref="inputAccount"
+              @keyup="autoWrap($event)"
               class="login-input"
             >
               <template #prefix>
@@ -155,6 +188,8 @@
               type="password"
               showPasswordOn="click"
               placeholder="请输入密码"
+              ref="inputPassword"
+              @keyup="autoWrap($event)"
               class="login-input"
             >
               <template #prefix>
@@ -170,6 +205,8 @@
               type="password"
               showPasswordOn="click"
               placeholder="请确认密码"
+              ref="confirmPassword"
+              @keyup="autoWrap($event)"
               class="login-input"
             >
               <template #prefix>
