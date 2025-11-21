@@ -89,7 +89,7 @@
                 :line-clamp="3"
                 expand-trigger="click"
               >
-                <div class="markdown-content" v-html="renderedMarkdown(m.report)"></div>
+                {{ cleanMarkdown(m.report) }}
                 <template #tooltip>点击展开</template>
               </n-ellipsis>
             </div>
@@ -207,7 +207,6 @@
   }
 
   .markdown-content {
-
   }
 
   /* 响应式适配 */
