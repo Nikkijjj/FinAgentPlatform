@@ -111,7 +111,7 @@
           <n-input
             v-model:value="userInput"
             type="textarea"
-            placeholder="请选择上方的Agent类型或直接输入您的问题..."
+            placeholder="请选择下方的Agent类型或直接输入您的问题..."
             :autosize="{ minRows: 1 }"
             @keydown.enter.prevent="handleSendMessage"
             class="message-input"

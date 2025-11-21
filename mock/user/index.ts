@@ -56,11 +56,12 @@ export const mockEmptyUserInfo: UserInfoType = {
         annualized_return_rate: undefined,
         return_stability: undefined,
         return_description: undefined,
-        risk_tolerance: {
-          risk_level: undefined,
-          risk_description: undefined,
-          loss_tolerance_ratio: undefined,
-        },
+      },
+
+      risk_tolerance: {
+        risk_level: undefined,
+        risk_description: undefined,
+        loss_tolerance_ratio: undefined,
       },
     },
 

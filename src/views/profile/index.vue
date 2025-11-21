@@ -9,7 +9,7 @@
         label-width="80px"
         class="profile-form"
       >
-        <n-collapse default-expanded-names="[1,2,3,4,5]">
+        <n-collapse>
           <n-collapse-item title="个人信息" name="1">
             <n-card class="form-block">
               <n-form-item label="昵称">
@@ -76,7 +76,9 @@
               <n-form-item label="投资描述">
                 <n-input
                   clearable
-                  autosize
+                  type="textarea"
+                  :autosize="{ minRows: 1 }"
+                  style="min-width: 100%"
                   v-model:value="
                     formData.user_investment_profile.personalized_investment_goals.investment_tenure
                       .tenure_description
@@ -113,12 +115,19 @@
               <n-form-item label="收益描述">
                 <n-input
                   clearable
+                  type="textarea"
+                  :autosize="{ minRows: 1 }"
+                  style="min-width: 100%"
                   v-model:value="
                     formData.user_investment_profile.personalized_investment_goals.expected_return
                       .return_description
                   "
                 />
               </n-form-item>
+            </n-card>
+          </n-collapse-item>
+          <n-collapse-item title="风险承受能力" name="4">
+            <n-card class="form-block">
               <n-form-item label="可承受亏损率">
                 <n-input-number
                   clearable
@@ -126,8 +135,8 @@
                   :max="100"
                   :precision="2"
                   v-model:value="
-                    formData.user_investment_profile.personalized_investment_goals.expected_return
-                      .risk_tolerance.loss_tolerance_ratio
+                    formData.user_investment_profile.personalized_investment_goals.risk_tolerance
+                      .loss_tolerance_ratio
                   "
                 >
                   <template #suffix> % </template>
@@ -137,23 +146,26 @@
                 <n-select
                   :options="risk_options"
                   v-model:value="
-                    formData.user_investment_profile.personalized_investment_goals.expected_return
-                      .risk_tolerance.risk_level
+                    formData.user_investment_profile.personalized_investment_goals.risk_tolerance
+                      .risk_level
                   "
                 />
               </n-form-item>
               <n-form-item label="风险描述">
                 <n-input
                   clearable
+                  type="textarea"
+                  :autosize="{ minRows: 1 }"
+                  style="min-width: 100%"
                   v-model:value="
-                    formData.user_investment_profile.personalized_investment_goals.expected_return
-                      .risk_tolerance.risk_description
+                    formData.user_investment_profile.personalized_investment_goals.risk_tolerance
+                      .risk_description
                   "
                 />
               </n-form-item>
             </n-card>
           </n-collapse-item>
-          <n-collapse-item title="持仓情况" name="4">
+          <n-collapse-item title="持仓情况" name="5">
             <n-card class="form-block">
               <div class="count-input">
                 <n-form-item label="数量">
@@ -200,7 +212,13 @@
                     />
                   </n-form-item>
                   <n-form-item label="股票描述">
-                    <n-input clearable autosize v-model:value="stock.holding_remark" />
+                    <n-input
+                      clearable
+                      type="textarea"
+                      :autosize="{ minRows: 1 }"
+                      style="min-width: 100%"
+                      v-model:value="stock.holding_remark"
+                    />
                   </n-form-item>
                 </n-card>
                 <n-button text @click="addHoldingStock" style="font-size: 100px; padding: 0">
@@ -248,7 +266,7 @@
               </div>
             </n-card>
           </n-collapse-item>
-          <n-collapse-item title="自选股信息" name="5">
+          <n-collapse-item title="自选股信息" name="6">
             <n-card class="form-block">
               <div class="count-input">
                 <n-form-item label="数量">
@@ -284,7 +302,13 @@
                     />
                   </n-form-item>
                   <n-form-item label="自选股描述">
-                    <n-input clearable autosize v-model:value="stock.watch_remark" />
+                    <n-input
+                      clearable
+                      type="textarea"
+                      :autosize="{ minRows: 1 }"
+                      style="min-width: 100%"
+                      v-model:value="stock.watch_remark"
+                    />
                   </n-form-item>
                 </n-card>
                 <n-button text @click="addWatchlistStock" style="font-size: 100px; padding: 0">

@@ -5,18 +5,28 @@
     fetchMessageByDay,
     StockNews,
     updateReadStatus,
-  } from '@/api/message_push/message';
+  } from '@/api/message/message';
   import { useRouter } from 'vue-router';
   import { useUserStore } from '@/store/modules/user';
   import { getLocalDate } from '@/api/time';
   import { useMessage } from 'naive-ui';
+  import { marked } from 'marked';
 
   const router = useRouter();
   const userStore = useUserStore();
   const message = useMessage();
 
+  marked.setOptions({
+    breaks: true,
+    gfm: true,
+  });
+
   const originalMessages = ref<StockNews[]>([]);
   const messages = ref<StockNews[]>([]);
+
+  const renderedMarkdown = (text: string) => {
+    return marked(text);
+  };
 
   const toHistory = () => {
     router.push('/message_push/history');
@@ -79,7 +89,7 @@
                 :line-clamp="3"
                 expand-trigger="click"
               >
-                {{ cleanMarkdown(m.report) }}
+                <div class="markdown-content" v-html="renderedMarkdown(m.report)"></div>
                 <template #tooltip>点击展开</template>
               </n-ellipsis>
             </div>
@@ -194,6 +204,10 @@
   .report-content {
     font-size: 14px;
     color: var(--text-main);
+  }
+
+  .markdown-content {
+
   }
 
   /* 响应式适配 */

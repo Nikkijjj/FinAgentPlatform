@@ -134,7 +134,7 @@
   import { ref, computed, onMounted } from 'vue';
   import { NCard, NGrid, NPagination, NButton, NIcon, NModal, NDatePicker, NSpace } from 'naive-ui';
   import { marked } from 'marked';
-  import { fetchNews, StockNews, truncateContent } from '@/api/message_push/message';
+  import { fetchNews, StockNews, truncateContent } from '@/api/message/message';
   import { useRouter } from 'vue-router';
   import { useUserStore } from '@/store/modules/user';
   import { useMessage } from 'naive-ui';

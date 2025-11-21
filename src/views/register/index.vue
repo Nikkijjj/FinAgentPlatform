@@ -76,7 +76,12 @@
             password: userInfo.password,
             user_investment_profile: mockEmptyUserInfo.user_investment_profile,
           };
-          await userStore.register(params);
+          const response = await userStore.register(params);
+          if (response.code != 0) {
+            loading.value = false;
+            message.error(response.msg);
+            return;
+          }
           const loginParams = {
             account: userInfo.account,
             password: userInfo.password,

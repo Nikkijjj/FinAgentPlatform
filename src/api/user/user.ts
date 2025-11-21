@@ -1,6 +1,4 @@
-import { Alova } from '@/utils/http/alova';
-import request from '@/utils/axios';
-import { badResponse } from '@/api/response';
+import { genRequestHeaders, requestAPI } from '@/api/response';
 
 export interface UserInfoType {
   _id: string; // id
@@ -24,11 +22,12 @@ export interface InvestmentProfileType {
       annualized_return_rate: number | undefined;
       return_stability: 'stable' | 'moderate' | 'flexible' | undefined;
       return_description?: string | undefined;
-      risk_tolerance: {
-        risk_level: 'conservative' | 'moderate' | 'aggressive' | 'radical' | undefined;
-        risk_description?: string | undefined;
-        loss_tolerance_ratio: number | undefined;
-      };
+    };
+
+    risk_tolerance: {
+      risk_level: 'conservative' | 'moderate' | 'aggressive' | 'radical' | undefined;
+      risk_description?: string | undefined;
+      loss_tolerance_ratio: number | undefined;
     };
   };
 
@@ -75,51 +74,16 @@ export const emptyStock = {
   holding_remark: '',
 };
 
-/**
- * @description: 获取用户信息
- */
-export function getUserInfo() {
-  return Alova.Get<InResult>('/admin_info', {
-    meta: {
-      isReturnNativeResponse: true,
-    },
-  });
-}
-
-/**
- * @description: 用户修改密码
- */
-export function changePassword(params, uid) {
-  return Alova.Post(`/user/u${uid}/changepw`, { params });
-}
-
-/**
- * @description: 用户登出
- */
-export function logout(params) {
-  return Alova.Post('/login/logout', {
-    params,
-  });
-}
-
 export interface LoginParams {
   account: string;
   password: string;
 }
 
 /**
- * @description: 用户登录
+ * @description 用户登录
  */
 export async function login(params: LoginParams) {
-  try {
-    const result = await request.post('/api/user/login', {
-      ...params,
-    });
-    return result.data ?? badResponse;
-  } catch (error) {
-    console.error(error);
-    return badResponse;
-  }
+  return await requestAPI('/api/user/login', 'post', null, params);
 }
 
 export interface RegisterParams {
@@ -130,32 +94,17 @@ export interface RegisterParams {
 }
 
 /**
- * @description: 用户注册
+ * @description 用户注册
  */
 export async function register(params: RegisterParams) {
-  try {
-    const result = await request.post('/api/user/register', {
-      ...params,
-    });
-    return result.data ?? badResponse;
-  } catch (error) {
-    console.error(error);
-    return badResponse;
-  }
+  return await requestAPI('/api/user/register', 'post', null, params);
 }
 
+/**
+ * @description 获取用户投资信息
+ */
 export async function getUserInvestmentProfile(token: string) {
-  try {
-    const result = await request.get('/api/user/investment/profile', {
-      headers: {
-        Authorization: token,
-      },
-    });
-    return result.data ?? badResponse;
-  } catch (error) {
-    console.error(error);
-    return badResponse;
-  }
+  return await requestAPI('/api/user/investment/profile', 'get', genRequestHeaders(token), null);
 }
 
 interface UpdateUserInvestmentProfileParams {
@@ -163,21 +112,11 @@ interface UpdateUserInvestmentProfileParams {
 }
 
 /**
- * @description: 更新用户信息
+ * @description 更新用户信息
  */
 export async function updateUserInvestmentProfile(
   token: string,
   params: UpdateUserInvestmentProfileParams
 ) {
-  try {
-    const result = await request.post('/api/user/investment/update_profile', params, {
-      headers: {
-        Authorization: token,
-      },
-    });
-    return result.data ?? badResponse;
-  } catch (error) {
-    console.error(error);
-    return badResponse;
-  }
+  return await requestAPI('/api/user/investment/profile', 'post', genRequestHeaders(token), params);
 }

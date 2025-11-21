@@ -1,5 +1,4 @@
-import request from '@/utils/axios/index';
-import { badResponse } from '@/api/response';
+import { genRequestHeaders, requestAPI } from '@/api/response';
 
 //单条数据
 export interface StockNews {
@@ -19,20 +18,10 @@ interface FetchNewsParams {
 }
 
 /**
- *  获取所有消息列表
+ *@description 获取所有消息列表
  */
 export async function fetchNews(token: string, params: FetchNewsParams) {
-  try {
-    const result = await request.post('/api/message/list', params, {
-      headers: {
-        Authorization: token,
-      },
-    });
-    return result.data ?? badResponse;
-  } catch (error) {
-    console.log(error);
-    return badResponse;
-  }
+  return await requestAPI('/api/message/list', 'post', genRequestHeaders(token), params);
 }
 
 interface UpdateReadStatusParams {
@@ -40,38 +29,21 @@ interface UpdateReadStatusParams {
 }
 
 /**
- * 更新消息已读状态
+ *@description 更新消息已读状态
  */
 export async function updateReadStatus(token: string, params: UpdateReadStatusParams) {
-  try {
-    const result = await request.post('/api/message/update_read', params, {
-      headers: {
-        Authorization: token,
-      },
-    });
-    return result.data ?? badResponse;
-  } catch (error) {
-    console.log(error);
-    return badResponse;
-  }
+  return await requestAPI('/api/message/update_read', 'post', genRequestHeaders(token), params);
 }
 
 interface FetchMessagesByDayParams {
   day: string;
 }
 
+/**
+ *@description 获取今日消息
+ */
 export async function fetchMessageByDay(token: string, params: FetchMessagesByDayParams) {
-  try {
-    const result = await request.post('/api/message/by_day', params, {
-      headers: {
-        Authorization: token,
-      },
-    });
-    return result.data ?? badResponse;
-  } catch (error) {
-    console.log(error);
-    return badResponse;
-  }
+  return await requestAPI('/api/message/by_day', 'post', genRequestHeaders(token), params);
 }
 
 export const cleanMarkdown = (content: string) => {
