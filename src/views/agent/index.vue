@@ -20,7 +20,16 @@
           <span>AI Assistant</span>
         </div>
         <div class="chat-actions">
-          <n-button quaternary circle @click="clearAllMessages">
+          <n-button quaternary circle @click="createNewChat" title="新建对话">
+            <template #icon>
+              <n-icon>
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                </svg>
+              </n-icon>
+            </template>
+          </n-button>
+          <n-button quaternary circle @click="clearAllMessages" title="清空消息">
             <template #icon>
               <n-icon>
                 <svg viewBox="0 0 24 24" fill="currentColor">
@@ -211,8 +220,14 @@
   import { NAvatar, NButton, NCard, NIcon, NInput, NSpin, useMessage } from 'naive-ui';
   import { marked } from 'marked';
   import DOMPurify from 'dompurify';
+  import { useRoute, useRouter } from 'vue-router';
+  import { useUserStore } from '@/store/modules/user';
+  import { getChatReply, getChatHistory, ChatMessage } from '@/api/chat/chat';
 
   const message = useMessage();
+  const route = useRoute();
+  const router = useRouter();
+  const userStore = useUserStore();
 
   // 响应式数据
   const activeAgent = ref<string>('');
@@ -223,6 +238,7 @@
   const messagesContainer = ref<HTMLElement>();
   const inputRef = ref<any>();
   const isLoading = ref<boolean>(false);
+  const currentSessionId = ref<string>('');
 
   // Agent提示词模板
   const agentTemplates = {
@@ -274,40 +290,9 @@
     return DOMPurify.sanitize(markdown);
   };
 
-  // 获取当前时间字符串
-  const getCurrentTimeString = (): string => {
-    const now = new Date();
-    return now.toISOString().split('T')[0]; // 返回 YYYY-MM-DD 格式
-  };
-
-  // 解析股票代码
-  const parseStockCode = (input: string): string => {
-    const stockCodeMatch = input.match(/【股票代码】:\s*([^\n\r\[\]]+)/);
-    if (stockCodeMatch && stockCodeMatch[1]) {
-      const code = stockCodeMatch[1].trim();
-
-      // 检查是否是占位符
-      if (code.includes('请在此处填写股票代码')) {
-        return '';
-      }
-
-      // 验证股票代码格式
-      if (isValidStockCode(code)) {
-        return code;
-      }
-    }
-    return '';
-  };
-
-  // 验证股票代码格式
-  const isValidStockCode = (code: string): boolean => {
-    // 1. 6位纯数字（A股代码）
-    const sixDigitPattern = /^\d{6}$/;
-
-    // 2. 字母数字组合（美股、港股等）
-    const alphaNumericPattern = /^[A-Za-z0-9.]{1,10}$/;
-
-    return sixDigitPattern.test(code) || alphaNumericPattern.test(code);
+  // 生成新的 session_id
+  const generateSessionId = (): string => {
+    return `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   };
 
   // 选择Agent
@@ -340,11 +325,9 @@
   const handleSendMessage = async () => {
     if (!userInput.value.trim() || isLoading.value) return;
 
-    // 解析股票代码
-    const stockCode = parseStockCode(userInput.value);
-    if (!stockCode) {
-      message.error('请填写有效的股票代码（6位数字或字母数字组合）');
-      return;
+    // 如果没有当前 session，创建一个新的
+    if (!currentSessionId.value) {
+      currentSessionId.value = generateSessionId();
     }
 
     // 添加用户消息
@@ -358,27 +341,21 @@
     isLoading.value = true;
 
     try {
-      // 根据选择的Agent调用不同的后端接口
-      let response;
-      switch (activeAgent.value) {
-        case 'market':
-          response = await callMarketAgent(currentInput, stockCode);
-          break;
-        case 'fundamental':
-          response = await callFundamentalAgent(currentInput, stockCode);
-          break;
-        case 'media':
-          response = await callMediaAgent(currentInput, stockCode);
-          break;
-        default:
-          throw new Error('请先选择Agent类型');
-      }
-
-      // 添加AI响应消息
-      messages.value.push({
-        type: 'ai-message',
-        content: response,
+      // 调用聊天接口
+      const response = await getChatReply(userStore.getToken, {
+        session_id: currentSessionId.value,
+        user_input: currentInput,
       });
+
+      if (response.code === 0) {
+        // 添加AI响应消息
+        messages.value.push({
+          type: 'ai-message',
+          content: response.data.reply || response.data,
+        });
+      } else {
+        throw new Error(response.msg || '请求失败');
+      }
     } catch (error) {
       console.error('API调用失败:', error);
       message.error('请求失败，请稍后重试');
@@ -392,78 +369,6 @@
       isLoading.value = false;
       scrollToBottom();
     }
-  };
-
-  // 调用Market Agent API
-  const callMarketAgent = async (userMessage: string, stockCode: string): Promise<string> => {
-    const requestData = {
-      company_of_interest: stockCode,
-      trade_date: getCurrentTimeString(),
-      messages: [userMessage],
-    };
-
-    const response = await fetch('/api/market/get/report', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestData),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.data || '收到市场分析数据，正在生成报告...';
-  };
-
-  // 调用Fundamental Agent API
-  const callFundamentalAgent = async (userMessage: string, stockCode: string): Promise<string> => {
-    const requestData = {
-      company_of_interest: stockCode,
-      trade_date: getCurrentTimeString(),
-      messages: [userMessage],
-    };
-
-    const response = await fetch('/api/fundamentals/get/report', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestData),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: s${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.data || '收到基本面数据，正在生成分析报告...';
-  };
-
-  // 调用Media Agent API
-  const callMediaAgent = async (userMessage: string, stockCode: string): Promise<string> => {
-    const requestData = {
-      company_of_interest: stockCode,
-      trade_date: getCurrentTimeString(),
-      messages: [userMessage],
-    };
-
-    const response = await fetch('/api/social_media/get/report', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestData),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.data || '收到媒体数据，正在生成内容建议...';
   };
 
   // 删除消息
@@ -480,7 +385,52 @@
     }
 
     messages.value = [];
+    currentSessionId.value = '';
     message.success('所有消息已清除');
+  };
+
+  // 创建新对话
+  const createNewChat = () => {
+    // 清空 URL 参数
+    router.replace({ name: 'agent_index' });
+    currentSessionId.value = '';
+    messages.value = [];
+    messages.value.push({
+      type: 'ai-message',
+      content:
+        '您好！我是AI助手。请选择上方的Agent类型开始对话，记得在查询中填写股票代码（必需）。支持6位数字代码（如000001）或字母数字组合（如AAPL）。',
+    });
+    message.success('已创建新对话');
+  };
+
+  // 加载特定会话的历史记录
+  const loadChatHistory = async (sessionId: string) => {
+    try {
+      const response = await getChatHistory(userStore.getToken, { session_id: sessionId });
+      if (response.code === 0) {
+        currentSessionId.value = sessionId;
+
+        // 清空当前消息
+        messages.value = [];
+
+        // 加载历史消息
+        const history: ChatMessage[] = response.data;
+        history.forEach((msg) => {
+          messages.value.push({
+            type: msg.role === 'user' ? 'user-message' : 'ai-message',
+            content: msg.content,
+          });
+        });
+
+        message.success('历史对话已加载');
+        scrollToBottom();
+      } else {
+        message.error('加载历史对话失败');
+      }
+    } catch (error) {
+      console.error('加载历史对话失败:', error);
+      message.error('加载历史对话失败');
+    }
   };
 
   // 滚动到对话框底部
@@ -523,13 +473,26 @@
     });
   });
 
+  // 监听路由参数变化
+  watch(
+    () => route.query.session,
+    (sessionId) => {
+      if (sessionId && typeof sessionId === 'string') {
+        loadChatHistory(sessionId);
+      }
+    },
+    { immediate: true }
+  );
+
   onMounted(() => {
-    // 初始示例消息
-    messages.value.push({
-      type: 'ai-message',
-      content:
-        '您好！我是AI助手。请选择上方的Agent类型开始对话，记得在查询中填写股票代码（必需）。支持6位数字代码（如000001）或字母数字组合（如AAPL）。',
-    });
+    // 如果URL中没有session参数，显示初始消息
+    if (!route.query.session) {
+      messages.value.push({
+        type: 'ai-message',
+        content:
+          '您好！我是AI助手。请选择上方的Agent类型开始对话，记得在查询中填写股票代码（必需）。支持6位数字代码（如000001）或字母数字组合（如AAPL）。',
+      });
+    }
   });
 </script>
 
@@ -587,6 +550,11 @@
       gap: 8px;
       font-weight: 600;
       font-size: 16px;
+    }
+
+    .chat-actions {
+      display: flex;
+      gap: 8px;
     }
   }
 

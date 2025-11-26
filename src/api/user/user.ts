@@ -5,8 +5,9 @@ export interface UserInfoType {
   name: string; // 姓名
   account: string; // 账号
   password: string; // 密码
+  report_template: string;
   user_investment_profile: InvestmentProfileType; // 用户投资配置(json)
-  status: 'active' | 'annul' | undefined; // 状态“生效”/“注销”
+  status: '生效' | '失效' | undefined; // 状态“生效”/“注销”
   date: string; // 用户创建时间
 }
 
@@ -109,6 +110,7 @@ export async function getUserInvestmentProfile(token: string) {
 
 interface UpdateUserInvestmentProfileParams {
   user_investment_profile: InvestmentProfileType;
+  user_report_template: string;
 }
 
 /**
@@ -118,5 +120,5 @@ export async function updateUserInvestmentProfile(
   token: string,
   params: UpdateUserInvestmentProfileParams
 ) {
-  return await requestAPI('/api/user/investment/profile', 'post', genRequestHeaders(token), params);
+  return await requestAPI('/api/user/investment/update_profile', 'post', genRequestHeaders(token), params);
 }

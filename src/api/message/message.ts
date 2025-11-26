@@ -9,6 +9,7 @@ export interface StockNews {
   report: string; // 报告
   label: string; // 标签
   is_read: string; // 是否已读
+  session_id: string; //会话ID
   date: string; // 落库时间
 }
 

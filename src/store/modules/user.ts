@@ -135,12 +135,19 @@ export const useUserStore = defineStore({
     },
 
     // 更新用户投资信息
-    async updateUserInvestmentProfile() {
-      const params = {
-        user_investment_profile: this.info.user_investment_profile,
-      };
-      return await updateUserInvestmentProfile(this.token, params);
-    },
+// store/modules/user.ts 中的方法修改
+async updateUserInvestmentProfile(params?: {
+  user_investment_profile?: InvestmentProfileType;
+  user_report_template?: string;
+}) {
+  // 优先使用传入的参数，否则用本地存储的信息
+  const requestParams = {
+    user_investment_profile: params?.user_investment_profile || this.info.user_investment_profile,
+    // 新增 user_report_template 字段
+    user_report_template: params?.user_report_template || this.info.report_template, 
+  };
+  return await updateUserInvestmentProfile(this.token, requestParams);
+},
 
     // 登出
     async logout() {

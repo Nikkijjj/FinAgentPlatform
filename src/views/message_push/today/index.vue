@@ -1,11 +1,12 @@
 <script setup lang="ts">
-  import { onMounted, ref } from 'vue';
+  import { onMounted, ref, nextTick } from 'vue';
   import {
     cleanMarkdown,
     fetchMessageByDay,
     StockNews,
     updateReadStatus,
   } from '@/api/message/message';
+  import { getChatReply } from '@/api/chat/chat';
   import { useRouter } from 'vue-router';
   import { useUserStore } from '@/store/modules/user';
   import { getLocalDate } from '@/api/time';
@@ -23,9 +24,51 @@
 
   const originalMessages = ref<StockNews[]>([]);
   const messages = ref<StockNews[]>([]);
+  const expandedMessageId = ref<string | null>(null);
+  const userInput = ref('');
+  const chatMessages = ref<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
+  const isLoadingChat = ref(false);
+  const sessionId = ref<string>('');
+
+  // 生成会话ID
+  const generateSessionId = () => {
+    return `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+  };
 
   const renderedMarkdown = (text: string) => {
     return marked(text);
+  };
+
+  // 提取Markdown大纲
+  const extractOutline = (markdown: string) => {
+    const lines = markdown.split('\n');
+    const outline: Array<{ level: number; text: string; id: string }> = [];
+
+    lines.forEach((line, index) => {
+      const match = line.match(/^(#{1,6})\s+(.+)$/);
+      if (match) {
+        const level = match[1].length;
+        const text = match[2];
+        const id = `heading-${index}`;
+        outline.push({ level, text, id });
+      }
+    });
+
+    return outline;
+  };
+
+  // 为Markdown内容添加ID锚点
+  const addHeadingIds = (markdown: string) => {
+    const lines = markdown.split('\n');
+    return lines
+      .map((line, index) => {
+        const match = line.match(/^(#{1,6})\s+(.+)$/);
+        if (match) {
+          return `${match[1]} <span id="heading-${index}">${match[2]}</span>`;
+        }
+        return line;
+      })
+      .join('\n');
   };
 
   const toHistory = () => {
@@ -33,11 +76,90 @@
   };
 
   const updateRead = (item: StockNews) => {
-    item.is_read = 'yes';
-    const params = {
-      id: item._id,
-    };
-    updateReadStatus(userStore.getToken, params);
+    if (item.is_read !== 'yes') {
+      item.is_read = 'yes';
+      const params = {
+        id: item._id,
+      };
+      updateReadStatus(userStore.getToken, params);
+    }
+  };
+
+  // 展开/折叠消息
+  const toggleExpand = (item: StockNews) => {
+    if (expandedMessageId.value === item._id) {
+      // 折叠
+      expandedMessageId.value = null;
+    } else {
+      // 展开
+      expandedMessageId.value = item._id;
+      sessionId.value = generateSessionId();
+      chatMessages.value = [];
+      updateRead(item);
+
+      // 等待 DOM 更新后滚动到内容区域
+      nextTick(() => {
+        const expandedElement = document.getElementById(`expanded-${item._id}`);
+        if (expandedElement) {
+          expandedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    }
+  };
+
+  // 滚动到指定标题
+  const scrollToHeading = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  // 发送聊天消息
+  const sendChatMessage = async (item: StockNews) => {
+    if (!userInput.value.trim() || isLoadingChat.value) return;
+
+    const userMessage = userInput.value.trim();
+    chatMessages.value.push({ role: 'user', content: userMessage });
+    userInput.value = '';
+    isLoadingChat.value = true;
+
+    try {
+      const response = await getChatReply(userStore.getToken, {
+        session_id: item.session_id,
+        user_input: userMessage,
+      });
+      console.log('Chat response:', response);
+
+      if (response.code == 0) {
+        chatMessages.value.push({
+          role: 'assistant',
+          content: response.data || '抱歉，我没有理解您的问题。',
+        });
+      } else {
+        message.error(response.msg || '获取回复失败');
+        chatMessages.value.push({
+          role: 'assistant',
+          content: '抱歉，服务暂时不可用，请稍后再试。',
+        });
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+      message.error('发送消息失败');
+      chatMessages.value.push({
+        role: 'assistant',
+        content: '抱歉，发生了错误，请稍后再试。',
+      });
+    } finally {
+      isLoadingChat.value = false;
+      // 滚动到消息底部
+      nextTick(() => {
+        const messagesContainer = document.querySelector('.chat-messages');
+        if (messagesContainer) {
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+      });
+    }
   };
 
   onMounted(async () => {
@@ -66,9 +188,17 @@
           v-for="(m, index) in messages"
           :key="index"
           :time="m.trade_date"
-          :title="m.label"
           class="report-header"
         >
+          <!-- 自定义标题：显示标签和已读/未读状态 -->
+          <template #header>
+            <div class="title-row">
+              <span class="title-label">{{ m.label }}</span>
+              <span v-if="m.is_read !== 'yes'" class="read-status unread">[未读]</span>
+              <span v-else class="read-status read">[已读]</span>
+            </div>
+          </template>
+
           <template v-if="m.is_read != 'yes'" #icon>
             <n-icon>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#FF3B30">
@@ -76,22 +206,107 @@
               </svg>
             </n-icon>
           </template>
+
           <n-card
-            @click="updateRead(m)"
             class="report-card"
-            :class="{ read: m.is_read == 'yes' }"
+            :class="{ read: m.is_read == 'yes', expanded: expandedMessageId === m._id }"
             content-class="report-card"
             header-class="report-header"
           >
-            <div>
-              <n-ellipsis
-                class="ellipsis-text report-content"
-                :line-clamp="3"
-                expand-trigger="click"
-              >
+            <!-- 折叠状态：显示简略内容 -->
+            <div v-if="expandedMessageId !== m._id" @click="toggleExpand(m)">
+              <n-ellipsis class="ellipsis-text report-content" :line-clamp="3">
                 {{ cleanMarkdown(m.report) }}
                 <template #tooltip>点击展开</template>
               </n-ellipsis>
+            </div>
+
+            <!-- 展开状态：显示完整内容 + 大纲 + 聊天框 -->
+            <div v-else :id="`expanded-${m._id}`" class="expanded-content">
+              <!-- 折叠按钮 -->
+              <div class="collapse-btn-wrapper">
+                <n-button text @click="toggleExpand(m)" class="collapse-btn">
+                  <template #icon>
+                    <n-icon>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M7 10l5 5 5-5z" />
+                      </svg>
+                    </n-icon>
+                  </template>
+                  收起
+                </n-button>
+              </div>
+
+              <div class="expanded-layout">
+                <!-- 左侧：Markdown内容 -->
+                <div class="content-area">
+                  <div
+                    class="markdown-content"
+                    v-html="renderedMarkdown(addHeadingIds(m.report))"
+                  ></div>
+                </div>
+
+                <!-- 右侧：大纲和聊天框 -->
+                <div class="sidebar">
+                  <!-- 大纲 -->
+                  <div class="outline-section">
+                    <h3 class="section-title">大纲</h3>
+                    <div class="outline-list">
+                      <div
+                        v-for="item in extractOutline(m.report)"
+                        :key="item.id"
+                        :class="['outline-item', `outline-level-${item.level}`]"
+                        @click="scrollToHeading(item.id)"
+                      >
+                        {{ item.text }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 聊天对话框 -->
+                  <div class="chat-section">
+                    <h3 class="section-title">对话框</h3>
+                    <div class="chat-messages">
+                      <div
+                        v-for="(msg, idx) in chatMessages"
+                        :key="idx"
+                        :class="['chat-message', msg.role]"
+                      >
+                        <div class="message-bubble">
+                          {{ msg.content }}
+                        </div>
+                      </div>
+                      <div v-if="isLoadingChat" class="chat-message assistant">
+                        <div class="message-bubble loading">
+                          <n-spin size="small" />
+                          <span style="margin-left: 8px">思考中...</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="chat-input-area">
+                      <n-input
+                        v-model:value="userInput"
+                        type="textarea"
+                        placeholder="输入您的问题..."
+                        :autosize="{ minRows: 2, maxRows: 4 }"
+                        @keydown.enter.prevent="sendChatMessage"
+                      />
+                      <n-button
+                        type="primary"
+                        :loading="isLoadingChat"
+                        @click="sendChatMessage"
+                        class="send-btn"
+                      >
+                        发送
+                      </n-button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </n-card>
         </n-timeline-item>
@@ -119,8 +334,308 @@
   }
 
   .ellipsis-text {
-    max-width: 120px;
+    max-width: 100%;
+    cursor: pointer;
     pointer-events: all;
+  }
+
+  // 标题行样式
+  .title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .title-label {
+    font-weight: 600;
+    font-size: 16px;
+  }
+
+  .read-status {
+    font-size: 14px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+
+    &.unread {
+      color: #ff3b30;
+      background-color: rgba(255, 59, 48, 0.1);
+    }
+
+    &.read {
+      color: #165dff;
+      background-color: rgba(22, 93, 255, 0.1);
+    }
+  }
+
+  // 展开状态的卡片
+  .report-card.expanded {
+    max-width: 100%;
+  }
+
+  // 展开内容布局
+  .expanded-content {
+    width: 100%;
+  }
+
+  .collapse-btn-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+  }
+
+  .collapse-btn {
+    color: #165dff;
+    font-size: 14px;
+  }
+
+  .expanded-layout {
+    display: flex;
+    gap: 24px;
+    min-height: 600px;
+  }
+
+  .content-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: #fafafa;
+    border-radius: 8px;
+    max-height: 800px;
+  }
+
+  .sidebar {
+    width: 350px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  // 大纲样式
+  .outline-section {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    max-height: 350px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #333;
+    text-align: center;
+  }
+
+  .outline-list {
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .outline-item {
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 14px;
+
+    &:hover {
+      background-color: #f5f7fa;
+    }
+
+    &.outline-level-1 {
+      font-weight: 600;
+      color: #333;
+    }
+
+    &.outline-level-2 {
+      padding-left: 24px;
+      color: #666;
+    }
+
+    &.outline-level-3 {
+      padding-left: 36px;
+      color: #888;
+      font-size: 13px;
+    }
+
+    &.outline-level-4,
+    &.outline-level-5,
+    &.outline-level-6 {
+      padding-left: 48px;
+      color: #999;
+      font-size: 12px;
+    }
+  }
+
+  // 聊天框样式
+  .chat-section {
+    flex: 1;
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 12px;
+    padding: 12px;
+    background: #f5f7fa;
+    border-radius: 8px;
+  }
+
+  .chat-message {
+    margin-bottom: 12px;
+    display: flex;
+
+    &.user {
+      justify-content: flex-end;
+
+      .message-bubble {
+        background-color: #165dff;
+        color: white;
+      }
+    }
+
+    &.assistant {
+      justify-content: flex-start;
+
+      .message-bubble {
+        background-color: white;
+        color: #333;
+        border: 1px solid #e5e7eb;
+      }
+    }
+  }
+
+  .message-bubble {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+
+    &.loading {
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  .chat-input-area {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 12px;
+  }
+
+  .send-btn {
+    margin-top: 8px;
+    width: 100%;
+  }
+
+  // Markdown 内容样式
+  .markdown-content {
+    line-height: 1.8;
+    color: #333;
+
+    :deep(h1),
+    :deep(h2),
+    :deep(h3),
+    :deep(h4),
+    :deep(h5),
+    :deep(h6) {
+      margin-top: 24px;
+      margin-bottom: 16px;
+      font-weight: 600;
+      line-height: 1.4;
+      scroll-margin-top: 20px;
+    }
+
+    :deep(h1) {
+      font-size: 28px;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 8px;
+    }
+
+    :deep(h2) {
+      font-size: 24px;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 6px;
+    }
+
+    :deep(h3) {
+      font-size: 20px;
+    }
+
+    :deep(p) {
+      margin-bottom: 16px;
+    }
+
+    :deep(ul),
+    :deep(ol) {
+      margin-bottom: 16px;
+      padding-left: 24px;
+    }
+
+    :deep(li) {
+      margin-bottom: 8px;
+    }
+
+    :deep(code) {
+      background-color: #f5f7fa;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 13px;
+    }
+
+    :deep(pre) {
+      background-color: #2d2d2d;
+      color: #f8f8f2;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin-bottom: 16px;
+
+      code {
+        background: none;
+        padding: 0;
+        color: inherit;
+      }
+    }
+
+    :deep(blockquote) {
+      border-left: 4px solid #165dff;
+      padding-left: 16px;
+      margin: 16px 0;
+      color: #666;
+    }
+
+    :deep(table) {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+    }
+
+    :deep(th),
+    :deep(td) {
+      border: 1px solid #e5e7eb;
+      padding: 8px 12px;
+      text-align: left;
+    }
+
+    :deep(th) {
+      background-color: #f5f7fa;
+      font-weight: 600;
+    }
   }
 
   // ai优化代码
@@ -206,9 +721,6 @@
     color: var(--text-main);
   }
 
-  .markdown-content {
-  }
-
   /* 响应式适配 */
   @media (max-width: 768px) {
     .nav {
@@ -224,6 +736,14 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 8px;
+    }
+
+    .expanded-layout {
+      flex-direction: column;
+    }
+
+    .sidebar {
+      width: 100%;
     }
   }
 </style>

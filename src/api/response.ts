@@ -25,6 +25,7 @@ export async function requestAPI(url, method, headers, body) {
       method: method,
       headers: headers,
       data: body,
+      timeout: 60000,
     });
     return response.data ?? badResponse;
   } catch (error) {

@@ -22,7 +22,7 @@ const routes: Array<RouteRecordRaw> = [
         path: 'index',
         name: `${routeName}_index`,
         meta: {
-          title: '股票档案',
+          title: '用户档案',
           activeMenu: 'profile_index',
         },
         component: () => import('@/views/profile/index.vue'),

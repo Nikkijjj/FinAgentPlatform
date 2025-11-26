@@ -16,6 +16,7 @@ const routes: Array<RouteRecordRaw> = [
       isRoot: true,
       activeMenu: 'agent',
       icon: renderIcon(ProjectOutlined),
+      title: '多功能AGENT',
     },
     children: [
       {
