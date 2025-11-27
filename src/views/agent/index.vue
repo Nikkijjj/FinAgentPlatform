@@ -49,21 +49,9 @@
             <n-avatar
               round
               size="small"
-              :style="{ backgroundColor: m.type === 'ai-message' ? '#4576F1' : '#D5DCEE' }"
-            >
-              <n-icon>
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    v-if="m.type === 'ai-message'"
-                    d="M20.5 14.5V16H19v-1.5h1.5zm-13 0H9V16H5.5v-1.5h2zM16 9c0-2.21-1.79-4-4-4S8 6.79 8 9s1.79 4 4 4 4-1.79 4-4zM3.5 18c0-3.5 6-5.5 9-5.5s9 2 9 5.5V20H3.5v-2z"
-                  />
-                  <path
-                    v-else
-                    d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-                  />
-                </svg>
-              </n-icon>
-            </n-avatar>
+              :src="m.type === 'ai-message' ? aiAvatar : userAvatar"
+              :fallback-src="m.type === 'ai-message' ? aiAvatarFallback : userAvatarFallback"
+            />
           </div>
           <div class="message-content">
             <div class="message-text">
@@ -94,15 +82,7 @@
         <!-- 加载状态 -->
         <div v-if="isLoading" class="message ai-message">
           <div class="message-avatar">
-            <n-avatar round size="small" :style="{ backgroundColor: '#4576F1' }">
-              <n-icon>
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    d="M20.5 14.5V16H19v-1.5h1.5zm-13 0H9V16H5.5v-1.5h2zM16 9c0-2.21-1.79-4-4-4S8 6.79 8 9s1.79 4 4 4 4-1.79 4-4zM3.5 18c0-3.5 6-5.5 9-5.5s9 2 9 5.5V20H3.5v-2z"
-                  />
-                </svg>
-              </n-icon>
-            </n-avatar>
+            <n-avatar round size="small" :src="aiAvatar" :fallback-src="aiAvatarFallback" />
           </div>
           <div class="message-content">
             <div class="message-text">
@@ -239,6 +219,13 @@
   const inputRef = ref<any>();
   const isLoading = ref<boolean>(false);
   const currentSessionId = ref<string>('');
+
+  // 使用您提供的机器人图片作为AI头像
+  const aiAvatar = ref<string>('https://tse3.mm.bing.net/th/id/OIP.BaX2gxcUogd-XwXjJGUb7AHaHa?w=996&h=996&rs=1&pid=ImgDetMain&o=7&rm=3');
+  const aiAvatarFallback = ref<string>('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiM0NTc2RjEiLz4KPGNpcmNsZSBjeD0iNTAiIGN5PSIzNSIgcj0iMTUiIGZpbGw9IndoaXRlIi8+CjxyZWN0IHg9IjMwIiB5PSI1NSIgd2lkdGg9IjQwIiBoZWlnaHQ9IjMwIiByeD0iOCIgZmlsbD0id2hpdGUiLz4KPGNpcmNsZSBjeD0iNDAiIGN5PSIzNSIgcj0iMyIgZmlsbD0iIzMzMzMzMyIvPgo8Y2lyY2xlIGN4PSI2MCIgY3k9IjM1IiByPSIzIiBmaWxsPSIjMzMzMzMzIi8+Cjwvc3ZnPgo=');
+  
+  const userAvatar = ref<string>('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face&q=80');
+  const userAvatarFallback = ref<string>('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiNENUVEQ0VFIi8+CjxjaXJjbGUgY3g9IjUwIiBjeT0iMzUiIHI9IjE1IiBmaWxsPSIjNkM3NzhBIi8+CjxwYXRoIGQ9Ik0yMCA3MEMyMCA1NSA0MCA0MCA1MCA0MEM2MCA0MCA4MCA1NSA4MCA3MEg4MkM4MiA1NCA2MiAzOCA1MCAzOEMzOCAzOCAxOCA1NCAxOCA3MEgyMFoiIGZpbGw9IiM2Qzc3OEEiLz4KPC9zdmc+');
 
   // Agent提示词模板
   const agentTemplates = {
@@ -593,6 +580,13 @@
         &:hover {
           color: white;
         }
+      }
+    }
+
+    .message-avatar {
+      :deep(.n-avatar) {
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.9);
       }
     }
 

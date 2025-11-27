@@ -12,6 +12,7 @@
   import { getLocalDate } from '@/api/time';
   import { useMessage } from 'naive-ui';
   import { marked } from 'marked';
+  import { NAvatar, NIcon } from 'naive-ui';
 
   const router = useRouter();
   const userStore = useUserStore();
@@ -29,6 +30,13 @@
   const chatMessages = ref<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
   const isLoadingChat = ref(false);
   const sessionId = ref<string>('');
+
+  // 使用与参考代码相同的头像
+  const aiAvatar = ref<string>('https://tse3.mm.bing.net/th/id/OIP.BaX2gxcUogd-XwXjJGUb7AHaHa?w=996&h=996&rs=1&pid=ImgDetMain&o=7&rm=3');
+  const aiAvatarFallback = ref<string>('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiM0NTc2RjEiLz4KPGNpcmNsZSBjeD0iNTAiIGN5PSIzNSIgcj0iMTUiIGZpbGw9IndoaXRlIi8+CjxyZWN0IHg9IjMwIiB5PSI1NSIgd2lkdGg9IjQwIiBoZWlnaHQ9IjMwIiByeD0iOCIgZmlsbD0id2hpdGUiLz4KPGNpcmNsZSBjeD0iNDAiIGN5PSIzNSIgcj0iMyIgZmlsbD0iIzMzMzMzMyIvPgo8Y2lyY2xlIGN4PSI2MCIgY3k9IjM1IiByPSIzIiBmaWxsPSIjMzMzMzMzIi8+Cjwvc3ZnPgo=');
+  
+  const userAvatar = ref<string>('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face&q=80');
+  const userAvatarFallback = ref<string>('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiNENUVEQ0VFIi8+CjxjaXJjbGUgY3g9IjUwIiBjeT0iMzUiIHI9IjE1IiBmaWxsPSIjNkM3NzhBIi8+CjxwYXRoIGQ9Ik0yMCA3MEMyMCA1NSA0MCA0MCA1MCA0MEM2MCA0MCA4MCA1NSA4MCA3MEg4MkM4MiA1NCA2MiAzOCA1MCAzOEMzOCAzOCAxOCA1NCAxOCA3MEgyMFoiIGZpbGw9IiM2Qzc3OEEiLz4KPC9zdmc+');
 
   // 生成会话ID
   const generateSessionId = () => {
@@ -276,33 +284,66 @@
                         :key="idx"
                         :class="['chat-message', msg.role]"
                       >
-                        <div class="message-bubble">
-                          {{ msg.content }}
+                        <div class="message-avatar">
+                          <n-avatar
+                            round
+                            size="small"
+                            :src="msg.role === 'assistant' ? aiAvatar : userAvatar"
+                            :fallback-src="msg.role === 'assistant' ? aiAvatarFallback : userAvatarFallback"
+                          />
+                        </div>
+                        <div class="message-content">
+                          <div class="message-bubble">
+                            {{ msg.content }}
+                          </div>
                         </div>
                       </div>
                       <div v-if="isLoadingChat" class="chat-message assistant">
-                        <div class="message-bubble loading">
-                          <n-spin size="small" />
-                          <span style="margin-left: 8px">思考中...</span>
+                        <div class="message-avatar">
+                          <n-avatar
+                            round
+                            size="small"
+                            :src="aiAvatar"
+                            :fallback-src="aiAvatarFallback"
+                          />
+                        </div>
+                        <div class="message-content">
+                          <div class="message-bubble loading">
+                            <n-spin size="small" />
+                            <span style="margin-left: 8px">思考中...</span>
+                          </div>
                         </div>
                       </div>
                     </div>
+                    <!-- 修改后的输入区域 -->
+                    <!-- 修改后的输入区域 -->
                     <div class="chat-input-area">
-                      <n-input
-                        v-model:value="userInput"
-                        type="textarea"
-                        placeholder="输入您的问题..."
-                        :autosize="{ minRows: 2, maxRows: 4 }"
-                        @keydown.enter.prevent="sendChatMessage"
-                      />
-                      <n-button
-                        type="primary"
-                        :loading="isLoadingChat"
-                        @click="sendChatMessage"
-                        class="send-btn"
-                      >
-                        发送
-                      </n-button>
+                      <div class="input-container">
+                        <n-input
+                          v-model:value="userInput"
+                          type="textarea"
+                          placeholder="    输入您的问题..."
+                          :autosize="{ minRows: 1, maxRows: 3 }"
+                          @keydown.enter.prevent="sendChatMessage(m)"
+                          class="message-input"
+                          :disabled="isLoadingChat"
+                        />
+                        <n-button
+                          type="primary"
+                          class="send-button"
+                          :disabled="!userInput.trim() || isLoadingChat"
+                          @click="sendChatMessage(m)"
+                          :loading="isLoadingChat"
+                        >
+                          <template #icon>
+                            <n-icon>
+                              <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                              </svg>
+                            </n-icon>
+                          </template>
+                        </n-button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -491,54 +532,140 @@
     padding: 12px;
     background: #f5f7fa;
     border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
 
   .chat-message {
-    margin-bottom: 12px;
     display: flex;
+    gap: 12px;
 
     &.user {
-      justify-content: flex-end;
+      flex-direction: row-reverse;
 
       .message-bubble {
         background-color: #165dff;
         color: white;
+        border-radius: 12px 12px 0 12px;
       }
     }
 
     &.assistant {
-      justify-content: flex-start;
-
       .message-bubble {
         background-color: white;
         color: #333;
         border: 1px solid #e5e7eb;
+        border-radius: 12px 12px 12px 0;
+      }
+    }
+
+    .message-avatar {
+      :deep(.n-avatar) {
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.9);
+      }
+    }
+
+    .message-content {
+      display: flex;
+      align-items: flex-start;
+      max-width: 80%;
+    }
+
+    .message-bubble {
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+      word-wrap: break-word;
+
+      &.loading {
+        display: flex;
+        align-items: center;
       }
     }
   }
 
-  .message-bubble {
-    max-width: 85%;
-    padding: 10px 14px;
-    border-radius: 12px;
-    font-size: 14px;
-    line-height: 1.5;
-    word-wrap: break-word;
+  // 修改后的输入区域样式
+  .chat-input-area {
+    border-top: 1px solid #f0f0f0;
+    background: #fff;
+    flex-shrink: 0;
+    padding: 16px 0 0 0;
+  }
 
-    &.loading {
+  .input-container {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+
+    .message-input {
+      flex: 1;
+
+      // 确保输入框高度与按钮对齐
+      :deep(.n-input) {
+        min-height: 40px;
+      }
+
+      :deep(.n-input__textarea-el) {
+        resize: none;
+        min-height: 40px;
+        line-height: 1.4;
+        // 修改内边距，让光标紧靠左侧
+        padding: 10px 12px 10px 12px; // 确保左右内边距一致
+        font-size: 14px;
+        // 确保文本和光标从左侧开始
+        text-align: left;
+      }
+      
+      // 修复placeholder位置
+      :deep(.n-input__textarea-el::placeholder) {
+        color: #c2c2c2;
+        text-align: left;
+      }
+      
+      // 确保输入框聚焦时光标位置正确
+      :deep(.n-input--focus .n-input__textarea-el) {
+        padding-left: 12px; // 确保聚焦时内边距不变
+      }
+    }
+
+    .send-button {
+      background: #4c44d7;
+      border: none;
+      flex-shrink: 0;
+      height: 40px;
+      width: 40px;
+      border-radius: 6px;
       display: flex;
       align-items: center;
+      justify-content: center;
+
+      // 确保按钮内的图标垂直居中
+      :deep(.n-button__icon) {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      &:hover {
+        background: #665cf2;
+      }
+
+      &:disabled {
+        background: #d0d0d0;
+        cursor: not-allowed;
+      }
     }
   }
 
-  .chat-input-area {
-    border-top: 1px solid #e5e7eb;
-    padding-top: 12px;
-  }
-
-  .send-btn {
-    margin-top: 8px;
-    width: 100%;
+  // 确保加载状态也对齐
+  .chat-message .message-bubble.loading {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 8px 14px;
   }
 
   // Markdown 内容样式
