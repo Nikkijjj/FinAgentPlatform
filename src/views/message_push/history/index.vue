@@ -103,23 +103,14 @@
       <div class="pagination-container">
         <n-pagination
           v-model:page="currentPage"
-          :page-count="totalPages"
+          v-model:item-count="messages.length"
           @update:page="handlePageChange"
-          simple
-        >
-          <template #prefix>第</template>
-          <template #suffix>页</template>
-        </n-pagination>
-        <div class="page-size-slider">
-          <span>每页消息数量</span>
-          <n-input-number
-            v-model:value="pageSize"
-            :min="1"
-            :max="messages.length"
-            @update:value="handlePageChange(1)"
-            :update-value-on-input="false"
-          />
-        </div>
+          @update:page-size="handlePageChange(1)"
+          show-quick-jumper
+          show-size-picker
+          :page-sizes="[5, 10, 20]"
+          v-model:page-size="pageSize"
+        />
       </div>
     </div>
   </n-card>
@@ -167,8 +158,7 @@
 
   // 响应式数据
   const messages = ref<StockNews[]>([]);
-  const pageSize = ref(8);
-  const totalPages = ref(1);
+  const pageSize = ref(10);
   const dateRange = ref<[number, number] | null>(null);
   const currentPage = ref(1);
   const showModal = ref(false);
@@ -207,19 +197,16 @@
       return itemDate >= startDate && itemDate <= endDate;
     });
     currentPage.value = 1;
-    totalPages.value = Math.ceil(messages.value.length / pageSize.value);
   };
 
   const resetFilter = () => {
     dateRange.value = null;
     messages.value = originalMessages.value;
     currentPage.value = 1;
-    totalPages.value = Math.ceil(messages.value.length / pageSize.value);
   };
 
   const handlePageChange = async (page = 1) => {
     currentPage.value = page;
-    totalPages.value = Math.ceil(messages.value.length / pageSize.value);
   };
 
   const showDetail = (item: StockNews) => {
@@ -245,7 +232,6 @@
     const messageResponse = await fetchNews(userStore.getToken, params);
     if (messageResponse.code == 0) {
       const { pagination } = messageResponse.data;
-      totalPages.value = pagination.pages;
       for (let i = 1; i <= pagination.pages; i++) {
         const response = await fetchNews(userStore.getToken, { page: i, size: size });
         if (response.code == 0) {
