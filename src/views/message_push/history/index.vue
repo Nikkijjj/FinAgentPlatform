@@ -23,7 +23,7 @@
 
       <!-- 项目卡片网格 -->
       <n-grid :cols="24" :x-gap="20" :y-gap="10" class="scrollable-content">
-        <n-gi v-for="(item, index) in filteredMessages" :key="index" :span="6">
+        <n-gi v-for="(item, index) in currentPageMessages" :key="index" :span="6">
           <n-card class="message-card" :class="{ read: item.is_read == 'yes' }">
             <template #header>
               <div class="header">
@@ -105,7 +105,21 @@
           v-model:page="currentPage"
           :page-count="totalPages"
           @update:page="handlePageChange"
-        />
+          simple
+        >
+          <template #prefix>第</template>
+          <template #suffix>页</template>
+        </n-pagination>
+        <div class="page-size-slider">
+          <span>每页消息数量</span>
+          <n-input-number
+            v-model:value="pageSize"
+            :min="1"
+            :max="messages.length"
+            @update:value="handlePageChange(1)"
+            :update-value-on-input="false"
+          />
+        </div>
       </div>
     </div>
   </n-card>
@@ -153,22 +167,25 @@
 
   // 响应式数据
   const messages = ref<StockNews[]>([]);
-  let pageSize = 6;
-  let totalPages: number;
+  const pageSize = ref(8);
+  const totalPages = ref(1);
   const dateRange = ref<[number, number] | null>(null);
   const currentPage = ref(1);
   const showModal = ref(false);
   const currentItem = ref<any>(null);
 
-  const filteredMessages = computed(() => {
-    const startIndex = (currentPage.value - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    return messages.value.slice(startIndex, endIndex);
-  });
-
   const renderedMarkdown = computed(() => {
     if (!currentItem.value) return '';
     return marked(currentItem.value.report);
+  });
+
+  const currentPageMessages = computed(() => {
+    return messages.value.filter((m, index) => {
+      return (
+        index < currentPage.value * pageSize.value &&
+        index >= (currentPage.value - 1) * pageSize.value
+      );
+    });
   });
 
   // 方法
@@ -180,30 +197,29 @@
       return;
     }
 
-    console.log('未被Date处理的dateRange:', dateRange);
-
     const [startTimestamp, endTimestamp] = dateRange.value;
     const startDate = new Date(startTimestamp);
     const endDate = new Date(endTimestamp);
     endDate.setHours(23, 59, 59);
-    console.log('Date转换后的startDate:', startDate);
-    console.log('Date转换后的endDate:', endDate);
 
     messages.value = originalMessages.value.filter((item) => {
       const itemDate = new Date(item.trade_date);
       return itemDate >= startDate && itemDate <= endDate;
     });
     currentPage.value = 1;
+    totalPages.value = Math.ceil(messages.value.length / pageSize.value);
   };
 
   const resetFilter = () => {
     dateRange.value = null;
     messages.value = originalMessages.value;
     currentPage.value = 1;
+    totalPages.value = Math.ceil(messages.value.length / pageSize.value);
   };
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = async (page = 1) => {
     currentPage.value = page;
+    totalPages.value = Math.ceil(messages.value.length / pageSize.value);
   };
 
   const showDetail = (item: StockNews) => {
@@ -221,20 +237,32 @@
     router.push('/message_push/today');
   };
 
-  // 生命周期
-  onMounted(async () => {
+  const requestMessage = async (page, size) => {
     const params = {
-      page: 1,
-      size: pageSize,
+      page: page,
+      size: size,
     };
     const messageResponse = await fetchNews(userStore.getToken, params);
     if (messageResponse.code == 0) {
-      const { current_data, pagination } = messageResponse.data;
-      originalMessages.value = [...current_data];
+      const { pagination } = messageResponse.data;
+      totalPages.value = pagination.pages;
+      for (let i = 1; i <= pagination.pages; i++) {
+        const response = await fetchNews(userStore.getToken, { page: i, size: size });
+        if (response.code == 0) {
+          const { current_data } = response.data;
+          originalMessages.value.push(...current_data);
+        } else {
+          message.error(response.msg);
+          break;
+        }
+      }
       messages.value = [...originalMessages.value];
-      pageSize = pagination.size;
-      totalPages = pagination.total;
     } else message.error(messageResponse.msg);
+  };
+
+  // 生命周期
+  onMounted(async () => {
+    await requestMessage(1, pageSize.value);
   });
 </script>
 
@@ -265,6 +293,7 @@
     color: #165dff;
     border: 3px solid #165dff;
   }
+
   .container {
     display: flex;
     flex-direction: column;
@@ -291,6 +320,12 @@
     }
   }
 
+  .page-size-slider {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
   .scrollable-content {
     flex: 1;
     overflow-y: auto;
@@ -300,6 +335,8 @@
   }
 
   .pagination-container {
+    display: flex;
+    flex-direction: column;
     position: sticky;
     bottom: 0;
     left: 0;
@@ -307,9 +344,10 @@
     padding: 16px 20px;
     background-color: #fff;
     border-top: 1px solid #f0f0f0;
-    display: flex;
     justify-content: center;
+    align-items: center;
     z-index: 10;
+    gap: 20px;
   }
 
   .n-grid {
@@ -343,7 +381,7 @@
   }
 
   .read {
-    background-color: #e5dddd;
+    background-color: ghostwhite;
   }
 
   .red-circle {
