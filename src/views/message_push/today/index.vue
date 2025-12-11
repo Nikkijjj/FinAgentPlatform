@@ -64,7 +64,9 @@
       const match = line.match(/^(#{1,6})\s+(.+)$/);
       if (match) {
         const level = match[1].length;
-        const text = match[2];
+        let text = match[2].trim();
+        // 去掉中英文冒号
+        text = text.replace(/[:：]$/, '');
         const id = `heading-${index}`;
         outline.push({ level, text, id });
       }
@@ -107,18 +109,36 @@
       // 折叠
       expandedMessageId.value = null;
     } else {
+      // 记录当前滚动位置，用于折叠时返回
+      const previousScrollY = window.scrollY;
+
       // 展开
       expandedMessageId.value = item._id;
       sessionId.value = generateSessionId();
       chatMessages.value = [];
       updateRead(item);
 
-      // 等待 DOM 更新后滚动到内容区域
+      // 等待 DOM 更新后滚动到时间线项
       nextTick(() => {
-        const expandedElement = document.getElementById(`expanded-${item._id}`);
-        if (expandedElement) {
-          expandedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        // 给一点延迟确保DOM完全渲染（展开动画完成）
+        setTimeout(() => {
+          // 找到对应的时间线项
+          const timelineItem = document.querySelector(`[data-message-id="${item._id}"]`);
+          if (timelineItem) {
+            // 使用最简单直接的方法
+            timelineItem.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start', // 确保在视口顶部
+              inline: 'nearest'
+            });
+
+            // 添加一些视觉反馈
+            timelineItem.classList.add('timeline-item-highlight');
+            setTimeout(() => {
+              timelineItem.classList.remove('timeline-item-highlight');
+            }, 1000);
+          }
+        }, 100); // 100ms延迟确保展开动画完成
       });
     }
   };
@@ -126,8 +146,18 @@
   // 滚动到指定标题
   const scrollToHeading = (id: string) => {
     const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const contentArea = document.querySelector('.content-area'); // 获取内容容器
+
+    if (element && contentArea) {
+      // 计算相对位置
+      const elementRect = element.getBoundingClientRect();
+      const contentRect = contentArea.getBoundingClientRect();
+
+      // 计算相对偏移量
+      const relativeTop = elementRect.top - contentRect.top + contentArea.scrollTop;
+
+      // 使用内容容器的scrollTop进行滚动
+      contentArea.scrollTop = relativeTop - 20; // 减去一点边距
     }
   };
 
@@ -170,12 +200,19 @@
       isLoadingChat.value = false;
       // 滚动到消息底部
       nextTick(() => {
-        const messagesContainer = document.querySelector('.chat-messages');
+        const messagesContainer = document.querySelector(`.chat-messages-${item._id}`);
         if (messagesContainer) {
           messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
       });
     }
+  };
+
+  const renderChatMarkdown = (text: string) => {
+    // 可以添加一些预处理，比如确保换行符正确处理
+    const processedText = text.replace(/\\n/g, '\n');
+    const rawHtml = marked(processedText);
+    return rawHtml;
   };
 
   onMounted(async () => {
@@ -205,6 +242,7 @@
           :key="index"
           :time="m.trade_date"
           class="report-header"
+          :data-message-id="m._id"
         >
           <!-- 自定义标题：显示标签和已读/未读状态 -->
           <template #header>
@@ -286,7 +324,7 @@
                   <!-- 聊天对话框 -->
                   <div class="chat-section">
                     <h3 class="section-title">对话框</h3>
-                    <div class="chat-messages">
+                    <div :class="`chat-messages chat-messages-${m._id}`">
                       <div
                         v-for="(msg, idx) in chatMessages"
                         :key="idx"
@@ -304,7 +342,16 @@
                         </div>
                         <div class="message-content">
                           <div class="message-bubble">
-                            {{ msg.content }}
+                            <!-- 区分用户和助理的消息渲染方式 -->
+                            <template v-if="msg.role === 'assistant'">
+                              <div
+                                class="markdown-content chat-markdown"
+                                v-html="renderChatMarkdown(msg.content)"
+                              ></div>
+                            </template>
+                            <template v-else>
+                              <div class="plain-text">{{ msg.content }}</div>
+                            </template>
                           </div>
                         </div>
                       </div>
@@ -325,7 +372,7 @@
                         </div>
                       </div>
                     </div>
-                    <!-- 修改后的输入区域 -->
+
                     <!-- 修改后的输入区域 -->
                     <div class="chat-input-area">
                       <div class="input-container">
@@ -367,6 +414,21 @@
 </template>
 
 <style scoped lang="less">
+  // 全局变量
+  :root {
+    --primary: #165dff;
+    --secondary: #ff7d00;
+    --text-main: #333333;
+    --text-light: #666666;
+    --bg-card: #ffffff;
+    --bg-page: #f5f7fa;
+    --border: #e5e7eb;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    --shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+  }
+
+  // 主容器
   .large-card {
     display: flex;
     position: relative;
@@ -384,10 +446,32 @@
     padding: 24px;
   }
 
-  .ellipsis-text {
-    max-width: 100%;
+  // 导航栏
+  .nav {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+    padding: 12px 24px;
+  }
+
+  .nav-item {
+    width: 400px;
+    height: 60px;
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: 2px solid #e5e7eb;
     cursor: pointer;
-    pointer-events: all;
+    transition: var(--transition);
+    font-weight: 500;
+  }
+
+  .nav-item:disabled {
+    color: #165dff;
+    border: 3px solid #165dff;
   }
 
   // 标题行样式
@@ -419,9 +503,29 @@
     }
   }
 
-  // 展开状态的卡片
-  .report-card.expanded {
+  // 报告卡片
+  .report-card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+
+    &.read {
+      background-color: ghostwhite;
+    }
+
+    &.expanded {
+      max-width: 100%;
+    }
+  }
+
+  .ellipsis-text {
     max-width: 100%;
+    cursor: pointer;
+    pointer-events: all;
   }
 
   // 展开内容布局
@@ -446,6 +550,7 @@
     min-height: 600px;
   }
 
+  // 内容区域
   .content-area {
     flex: 1;
     overflow-y: auto;
@@ -455,6 +560,7 @@
     max-height: 800px;
   }
 
+  // 侧边栏
   .sidebar {
     width: 350px;
     display: flex;
@@ -533,11 +639,12 @@
     display: flex;
     flex-direction: column;
     min-height: 400px;
+    max-height: 500px; // 添加最大高度限制
   }
 
   .chat-messages {
     flex: 1;
-    overflow-y: auto;
+    overflow-y: auto; // 确保有滚动条
     margin-bottom: 12px;
     padding: 12px;
     background: #f5f7fa;
@@ -545,6 +652,8 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    min-height: 200px; // 最小高度
+    max-height: 300px; // 添加最大高度，确保滚动条出现
   }
 
   .chat-message {
@@ -571,6 +680,7 @@
     }
 
     .message-avatar {
+      flex-shrink: 0;
       :deep(.n-avatar) {
         box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
         border: 2px solid rgba(255, 255, 255, 0.9);
@@ -589,15 +699,128 @@
       font-size: 14px;
       line-height: 1.5;
       word-wrap: break-word;
+      width: 100%;
 
       &.loading {
         display: flex;
         align-items: center;
+        min-height: 40px;
+        padding: 8px 14px;
       }
     }
   }
 
-  // 修改后的输入区域样式
+  // 聊天框Markdown样式
+  .chat-markdown {
+    font-size: 14px;
+    line-height: 1.5;
+
+    :deep(h1),
+    :deep(h2),
+    :deep(h3) {
+      margin: 0.8em 0 0.4em 0;
+      font-weight: 600;
+      color: #333;
+      line-height: 1.3;
+    }
+
+    :deep(h1) {
+      font-size: 1.2em;
+    }
+
+    :deep(h2) {
+      font-size: 1.1em;
+    }
+
+    :deep(h3) {
+      font-size: 1em;
+    }
+
+    :deep(p) {
+      margin: 0.5em 0;
+    }
+
+    :deep(ul),
+    :deep(ol) {
+      margin: 0.5em 0;
+      padding-left: 1.5em;
+    }
+
+    :deep(li) {
+      margin: 0.25em 0;
+    }
+
+    :deep(code) {
+      background: #f5f7fa;
+      padding: 0.2em 0.4em;
+      border-radius: 3px;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.9em;
+    }
+
+    :deep(pre) {
+      background: #f8f9fa;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 0.8em;
+      overflow-x: auto;
+      margin: 0.8em 0;
+
+      code {
+        background: none;
+        padding: 0;
+        border-radius: 0;
+      }
+    }
+
+    :deep(blockquote) {
+      border-left: 3px solid #165dff;
+      padding-left: 1em;
+      margin: 0.8em 0;
+      color: #666;
+    }
+
+    :deep(table) {
+      border-collapse: collapse;
+      margin: 0.8em 0;
+      width: 100%;
+      font-size: 0.9em;
+
+      th,
+      td {
+        border: 1px solid #e5e7eb;
+        padding: 0.4em 0.8em;
+      }
+
+      th {
+        background: #f8f9fa;
+        font-weight: 600;
+      }
+    }
+
+    :deep(a) {
+      color: #165dff;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+
+    :deep(hr) {
+      border: none;
+      border-top: 1px solid #e5e7eb;
+      margin: 1em 0;
+    }
+  }
+
+  // 用户消息保持纯文本样式
+  .chat-message.user .message-bubble .plain-text {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  // 输入区域
   .chat-input-area {
     border-top: 1px solid #f0f0f0;
     background: #fff;
@@ -613,7 +836,6 @@
     .message-input {
       flex: 1;
 
-      // 确保输入框高度与按钮对齐
       :deep(.n-input) {
         min-height: 40px;
       }
@@ -622,22 +844,18 @@
         resize: none;
         min-height: 40px;
         line-height: 1.4;
-        // 修改内边距，让光标紧靠左侧
-        padding: 10px 12px 10px 12px; // 确保左右内边距一致
+        padding: 10px 12px;
         font-size: 14px;
-        // 确保文本和光标从左侧开始
         text-align: left;
       }
 
-      // 修复placeholder位置
       :deep(.n-input__textarea-el::placeholder) {
         color: #c2c2c2;
         text-align: left;
       }
 
-      // 确保输入框聚焦时光标位置正确
       :deep(.n-input--focus .n-input__textarea-el) {
-        padding-left: 12px; // 确保聚焦时内边距不变
+        padding-left: 12px;
       }
     }
 
@@ -652,7 +870,6 @@
       align-items: center;
       justify-content: center;
 
-      // 确保按钮内的图标垂直居中
       :deep(.n-button__icon) {
         display: flex;
         align-items: center;
@@ -670,15 +887,33 @@
     }
   }
 
-  // 确保加载状态也对齐
-  .chat-message .message-bubble.loading {
-    display: flex;
-    align-items: center;
-    min-height: 40px;
-    padding: 8px 14px;
+  /* 添加高亮动画 */
+  @keyframes highlight {
+    0% {
+      background-color: transparent;
+    }
+    50% {
+      background-color: rgba(22, 93, 255, 0.1);
+    }
+    100% {
+      background-color: transparent;
+    }
   }
 
-  // Markdown 内容样式
+  /* 确保时间轴布局合理 */
+  .n-timeline {
+    position: relative;
+  }
+
+  /* 展开时的时间线项有更好的视觉区分 */
+  .n-timeline-item:has(.expanded) {
+    .report-card.expanded {
+      border-color: #165dff;
+      box-shadow: 0 0 0 2px rgba(22, 93, 255, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+  }
+
+  // 主内容Markdown样式
   .markdown-content {
     line-height: 1.8;
     color: #333;
@@ -775,112 +1010,45 @@
     }
   }
 
-  // ai优化代码
-  /* 全局变量与重置 */
-  :root {
-    --primary: #165dff; /* 主色：金融蓝，体现专业感 */
-    --secondary: #ff7d00; /* 辅助色：橙色，突出关键数据 */
-    --text-main: #333333; /* 正文文字色 */
-    --text-light: #666666; /* 次要文字色 */
-    --bg-card: #ffffff; /* 卡片背景 */
-    --bg-page: #f5f7fa; /* 页面背景 */
-    --border: #e5e7eb; /* 边框色 */
-    --shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* 卡片阴影 */
-    --shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.1); /*  hover阴影 */
-    --transition: all 0.3s ease; /* 通用过渡动画 */
-  }
-
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  }
-
-  body {
-    background-color: var(--bg-page);
-    color: var(--text-main);
-    line-height: 1.6;
-  }
-
-  /* 导航栏样式 */
-  .nav {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-card);
-    padding: 12px 24px;
-  }
-
-  .nav-item {
-    width: 400px;
-    height: 60px;
-    padding: 8px 16px;
-    border-radius: 4px;
-    border: 2px solid #e5e7eb;
-    cursor: pointer;
-    transition: var(--transition);
-    font-weight: 500;
-  }
-
-  .nav-item:disabled {
-    color: #165dff;
-    border: 3px solid #165dff;
-  }
-
-  /* 报告卡片样式 */
-  .report-card {
-    background-color: #ffffff;
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
-    padding: 24px;
-    margin-bottom: 24px;
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-  }
-
-  .read {
-    background-color: ghostwhite;
-  }
-
-  .report-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-
-  .report-content {
-    font-size: 14px;
-    color: var(--text-main);
-  }
-
-  /* 响应式适配 */
+  // 响应式适配
   @media (max-width: 768px) {
     .nav {
       flex-direction: column;
       padding: 12px;
     }
 
+    .container {
+      padding: 16px;
+    }
+
     .report-card {
       padding: 16px;
     }
 
-    .report-header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 8px;
-    }
-
     .expanded-layout {
       flex-direction: column;
+      gap: 16px;
     }
 
     .sidebar {
       width: 100%;
+    }
+
+    .content-area {
+      max-height: 400px;
+    }
+
+    .chat-section {
+      max-height: 450px;
+    }
+
+    .chat-messages {
+      max-height: 250px;
+    }
+
+    .nav-item {
+      width: 100%;
+      height: 50px;
     }
   }
 </style>
