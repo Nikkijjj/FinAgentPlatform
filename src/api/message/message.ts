@@ -61,6 +61,10 @@ export async function fetchMessage_Industry() {
   return await requestAPI('/api/message/industry', 'get');
 }
 
+export async function fetchMessage_Stock() {
+  return await requestAPI('/api/message/stock/news', 'get');
+}
+
 /**
  *@description 获取情绪消息列表
  */

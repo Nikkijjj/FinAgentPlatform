@@ -4,7 +4,7 @@
     cleanMarkdown,
     fetchMessage_Events,
     fetchMessage_Industry,
-    fetchMessage_Mood,
+    fetchMessage_Mood, fetchMessage_Stock,
     StockNews,
   } from '@/api/message/message';
   import { getChatReply } from '@/api/chat/chat';
@@ -100,6 +100,9 @@
 
   const originalMessages_industry = ref<[]>([]);
   const messages_industry = ref<[]>([]);
+
+  const originalMessages_stock = ref<[]>([]);
+  const messages_stock = ref<[]>([]);
 
   const originalMessages_mood = ref<[]>([]);
   const messages_mood = ref<[]>([]);
@@ -287,7 +290,13 @@
     const eventsResponse = await fetchMessage_Events();
     const industryResponse = await fetchMessage_Industry();
     const moodResponse = await fetchMessage_Mood();
-    if (eventsResponse.code != 0 || industryResponse.code != 0 || moodResponse.code != 0) {
+    const stockResponse = await fetchMessage_Stock();
+    if (
+      eventsResponse.code != 0 ||
+      industryResponse.code != 0 ||
+      moodResponse.code != 0 ||
+      stockResponse != 0
+    ) {
       message.error(eventsResponse.msg);
       return;
     }
@@ -300,6 +309,11 @@
     const data_industry = industryResponse.data;
     originalMessages_industry.value = [...data_industry];
     messages_industry.value = [...originalMessages_industry.value];
+
+    // stock
+    const data_stock = stockResponse.data;
+    originalMessages_stock.value = [...data_stock];
+    messages_stock.value = [...originalMessages_stock.value];
 
     // mood
     const data_mood = moodResponse.data;
@@ -363,11 +377,12 @@
         <n-tab-pane name="stock" tab="个股">
           <n-timeline size="large">
             <n-timeline-item
-              v-for="(m, index) in messages_events"
+              v-for="(m, index) in messages_stock"
               :key="index"
-              :time="m.时间"
+              :time="m.发布时间"
               class="report-header"
               :data-message-id="index"
+              :title="m.标题"
             >
               <!-- 自定义标题：显示标签和已读/未读状态 -->
               <template #header>
