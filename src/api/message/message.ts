@@ -47,6 +47,27 @@ export async function fetchMessageByDay(token: string, params: FetchMessagesByDa
   return await requestAPI('/api/message/by_day', 'post', genRequestHeaders(token), params);
 }
 
+/**
+ *@description 获取重大事件列表
+ */
+export async function fetchMessage_Events() {
+  return await requestAPI('/api/message/big_message', 'get');
+}
+
+/**
+ *@description 获取行业消息列表
+ */
+export async function fetchMessage_Industry() {
+  return await requestAPI('/api/message/industry', 'get');
+}
+
+/**
+ *@description 获取情绪消息列表
+ */
+export async function fetchMessage_Mood() {
+  return await requestAPI('/api/message/market/emotion', 'get');
+}
+
 export const cleanMarkdown = (content: string) => {
   if (!content) return '';
 

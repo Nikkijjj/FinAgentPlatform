@@ -2,17 +2,17 @@
   import { onMounted, ref, nextTick } from 'vue';
   import {
     cleanMarkdown,
-    fetchMessageByDay,
+    fetchMessage_Events,
+    fetchMessage_Industry,
+    fetchMessage_Mood,
     StockNews,
-    updateReadStatus,
   } from '@/api/message/message';
   import { getChatReply } from '@/api/chat/chat';
   import { useRouter } from 'vue-router';
   import { useUserStore } from '@/store/modules/user';
-  import { getLocalDate } from '@/api/time';
-  import { useMessage } from 'naive-ui';
+  import { NModal, useMessage } from 'naive-ui';
   import { marked } from 'marked';
-  import { NAvatar, NIcon } from 'naive-ui';
+  import { NIcon } from 'naive-ui';
 
   const router = useRouter();
   const userStore = useUserStore();
@@ -23,9 +23,90 @@
     gfm: true,
   });
 
-  const originalMessages = ref<StockNews[]>([]);
-  const messages = ref<StockNews[]>([]);
-  const expandedMessageId = ref<string | null>(null);
+  const pagination = { pageSize: 20 };
+
+  const columns_industry = [
+    {
+      title: '排名',
+      key: '排名',
+    },
+    {
+      title: '上涨家数',
+      key: '上涨家数',
+    },
+    {
+      title: '下跌家数',
+      key: '下跌家数',
+    },
+    {
+      title: '总市值',
+      key: '总市值',
+    },
+    {
+      title: '换手率',
+      key: '换手率',
+    },
+    {
+      title: '最新价',
+      key: '最新价',
+    },
+    {
+      title: '板块代码',
+      key: '板块代码',
+    },
+    {
+      title: '板块名称',
+      key: '板块名称',
+    },
+    {
+      title: '涨跌幅',
+      key: '涨跌幅',
+    },
+    {
+      title: '涨跌额',
+      key: '涨跌额',
+    },
+    {
+      title: '领涨股票',
+      key: '领涨股票',
+    },
+    {
+      title: '领涨股票-涨跌幅',
+      key: '领涨股票-涨跌幅',
+    },
+  ];
+
+  const columns_mood = [
+    {
+      title: '关注',
+      key: '关注',
+    },
+    {
+      title: '最新价',
+      key: '最新价',
+    },
+    {
+      title: '股票代码',
+      key: '股票代码',
+    },
+    {
+      title: '股票简称',
+      key: '股票简称',
+    },
+  ];
+
+  const originalMessages_events = ref<[]>([]);
+  const messages_events = ref<[]>([]);
+
+  const originalMessages_industry = ref<[]>([]);
+  const messages_industry = ref<[]>([]);
+
+  const originalMessages_mood = ref<[]>([]);
+  const messages_mood = ref<[]>([]);
+
+  const showModal = ref(false);
+  const expandedMessageId = ref<number | null>(null);
+
   const userInput = ref('');
   const chatMessages = ref<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
   const isLoadingChat = ref(false);
@@ -89,47 +170,34 @@
       .join('\n');
   };
 
-  const toHistory = () => {
-    router.push('/message_push/history');
-  };
-
-  const updateRead = (item: StockNews) => {
-    if (item.is_read !== 'yes') {
-      item.is_read = 'yes';
-      const params = {
-        id: item._id,
-      };
-      updateReadStatus(userStore.getToken, params);
-    }
-  };
-
   // 展开/折叠消息
-  const toggleExpand = (item: StockNews) => {
-    if (expandedMessageId.value === item._id) {
+  const toggleExpand = (i) => {
+    if (expandedMessageId.value === i) {
       // 折叠
       expandedMessageId.value = null;
+      showModal.value = false;
     } else {
       // 记录当前滚动位置，用于折叠时返回
       const previousScrollY = window.scrollY;
 
       // 展开
-      expandedMessageId.value = item._id;
+      expandedMessageId.value = i;
+      showModal.value = true;
       sessionId.value = generateSessionId();
       chatMessages.value = [];
-      updateRead(item);
 
       // 等待 DOM 更新后滚动到时间线项
       nextTick(() => {
         // 给一点延迟确保DOM完全渲染（展开动画完成）
         setTimeout(() => {
           // 找到对应的时间线项
-          const timelineItem = document.querySelector(`[data-message-id="${item._id}"]`);
+          const timelineItem = document.querySelector(`[data-message-id="${i}"]`);
           if (timelineItem) {
             // 使用最简单直接的方法
             timelineItem.scrollIntoView({
               behavior: 'smooth',
               block: 'start', // 确保在视口顶部
-              inline: 'nearest'
+              inline: 'nearest',
             });
 
             // 添加一些视觉反馈
@@ -200,7 +268,7 @@
       isLoadingChat.value = false;
       // 滚动到消息底部
       nextTick(() => {
-        const messagesContainer = document.querySelector(`.chat-messages-${item._id}`);
+        const messagesContainer = document.querySelector(`.chat-messages-${index}`);
         if (messagesContainer) {
           messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
@@ -216,200 +284,150 @@
   };
 
   onMounted(async () => {
-    // const day = getLocalDate();
-    const day = '2025-12-12';
-    const params = {
-      day: day,
-    };
-    const messageResponse = await fetchMessageByDay(userStore.getToken, params);
-    if (messageResponse.code == 0) {
-      const current_data = messageResponse.data.messages;
-      originalMessages.value = [...current_data];
-      messages.value = [...originalMessages.value];
-    } else message.error(messageResponse.msg);
+    const eventsResponse = await fetchMessage_Events();
+    const industryResponse = await fetchMessage_Industry();
+    const moodResponse = await fetchMessage_Mood();
+    if (eventsResponse.code != 0 || industryResponse.code != 0 || moodResponse.code != 0) {
+      message.error(eventsResponse.msg);
+      return;
+    }
+    // events
+    const data_events = eventsResponse.data.messages;
+    originalMessages_events.value = [...data_events];
+    messages_events.value = [...originalMessages_events.value];
+
+    // industry
+    const data_industry = industryResponse.data;
+    originalMessages_industry.value = [...data_industry];
+    messages_industry.value = [...originalMessages_industry.value];
+
+    // mood
+    const data_mood = moodResponse.data;
+    originalMessages_mood.value = [...data_mood];
+    messages_mood.value = [...originalMessages_mood.value];
   });
 </script>
 
 <template>
   <n-card class="large-card">
-    <div class="nav">
-      <n-button disabled class="nav-item">今日消息</n-button>
-      <n-button class="nav-item" @click="toHistory">历史消息</n-button>
-    </div>
     <div class="container">
-      <n-timeline size="large">
-        <n-timeline-item
-          v-for="(m, index) in messages"
-          :key="index"
-          :time="m.trade_date"
-          class="report-header"
-          :data-message-id="m._id"
-        >
-          <!-- 自定义标题：显示标签和已读/未读状态 -->
-          <template #header>
-            <div class="title-row">
-              <span class="title-label">{{ m.label }}</span>
-              <span v-if="m.is_read !== 'yes'" class="read-status unread">[未读]</span>
-              <span v-else class="read-status read">[已读]</span>
-            </div>
-          </template>
+      <n-tabs
+        type="line"
+        animated
+        size="large"
+        justify-content="space-between"
+        tab-style="background-color: ghostwhite; padding: 20px 80px 20px 80px;"
+      >
+        <n-tab-pane name="macro" tab="宏观">
+          <n-timeline size="large">
+            <n-timeline-item
+              v-for="(m, index) in messages_events"
+              :key="index"
+              :time="m.时间"
+              class="report-header"
+              :data-message-id="index"
+            >
+              <!-- 自定义标题：显示标签和已读/未读状态 -->
+              <template #header>
+                <div class="title-row">
+                  <span class="title-label"></span>
+                </div>
+              </template>
 
-          <template v-if="m.is_read != 'yes'" #icon>
-            <n-icon>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#FF3B30">
-                <circle cx="12" cy="12" r="6" />
-              </svg>
-            </n-icon>
-          </template>
+              <n-card
+                class="report-card"
+                :class="{ expanded: expandedMessageId === index }"
+                content-class="report-card"
+                header-class="report-header"
+              >
+                <!-- 折叠状态：显示简略内容 -->
+                <div v-if="expandedMessageId !== index" @click="toggleExpand(index)">
+                  <n-ellipsis class="ellipsis-text report-content" :line-clamp="3">
+                    {{ cleanMarkdown(m.内容) }}
+                    <template #tooltip>点击展开</template>
+                  </n-ellipsis>
+                </div>
+              </n-card>
+            </n-timeline-item>
+          </n-timeline>
+        </n-tab-pane>
+        <n-tab-pane name="industry" tab="行业">
+          <n-timeline size="large">
+            <n-data-table
+              :columns="columns_industry"
+              :data="messages_industry"
+              :pagination="pagination"
+            />
+          </n-timeline>
+        </n-tab-pane>
+        <n-tab-pane name="stock" tab="个股">
+          <n-timeline size="large">
+            <n-timeline-item
+              v-for="(m, index) in messages_events"
+              :key="index"
+              :time="m.时间"
+              class="report-header"
+              :data-message-id="index"
+            >
+              <!-- 自定义标题：显示标签和已读/未读状态 -->
+              <template #header>
+                <div class="title-row">
+                  <span class="title-label"></span>
+                </div>
+              </template>
 
-          <n-card
-            class="report-card"
-            :class="{ read: m.is_read == 'yes', expanded: expandedMessageId === m._id }"
-            content-class="report-card"
-            header-class="report-header"
-          >
-            <!-- 折叠状态：显示简略内容 -->
-            <div v-if="expandedMessageId !== m._id" @click="toggleExpand(m)">
-              <n-ellipsis class="ellipsis-text report-content" :line-clamp="3">
-                {{ cleanMarkdown(m.report) }}
-                <template #tooltip>点击展开</template>
-              </n-ellipsis>
-            </div>
-
-            <!-- 展开状态：显示完整内容 + 大纲 + 聊天框 -->
-            <div v-else :id="`expanded-${m._id}`" class="expanded-content">
-              <!-- 折叠按钮 -->
-              <div class="collapse-btn-wrapper">
-                <n-button text @click="toggleExpand(m)" class="collapse-btn">
-                  <template #icon>
-                    <n-icon>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <path d="M7 10l5 5 5-5z" />
-                      </svg>
-                    </n-icon>
-                  </template>
-                  收起
-                </n-button>
-              </div>
-
-              <div class="expanded-layout">
-                <!-- 左侧：Markdown内容 -->
-                <div class="content-area">
-                  <div
-                    class="markdown-content"
-                    v-html="renderedMarkdown(addHeadingIds(m.report))"
-                  ></div>
+              <n-card
+                class="report-card"
+                :class="{ expanded: expandedMessageId === index }"
+                content-class="report-card"
+                header-class="report-header"
+              >
+                <!-- 折叠状态：显示简略内容 -->
+                <div v-if="expandedMessageId !== index" @click="toggleExpand(index)">
+                  <n-ellipsis class="ellipsis-text report-content" :line-clamp="3">
+                    {{ cleanMarkdown(m.内容) }}
+                    <template #tooltip>点击展开</template>
+                  </n-ellipsis>
                 </div>
 
-                <!-- 右侧：大纲和聊天框 -->
-                <div class="sidebar">
-                  <!-- 大纲 -->
-                  <div class="outline-section">
-                    <h3 class="section-title">大纲</h3>
-                    <div class="outline-list">
-                      <div
-                        v-for="item in extractOutline(m.report)"
-                        :key="item.id"
-                        :class="['outline-item', `outline-level-${item.level}`]"
-                        @click="scrollToHeading(item.id)"
-                      >
-                        {{ item.text }}
-                      </div>
-                    </div>
+                <!-- 展开状态：显示完整内容 + 大纲 + 聊天框 -->
+                <div v-else :id="`expanded-${index}`" class="expanded-content">
+                  <!-- 折叠按钮 -->
+                  <div class="collapse-btn-wrapper">
+                    <n-button text @click="toggleExpand(index)" class="collapse-btn">
+                      <template #icon>
+                        <n-icon>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                          >
+                            <path d="M7 10l5 5 5-5z" />
+                          </svg>
+                        </n-icon>
+                      </template>
+                      收起
+                    </n-button>
                   </div>
 
-                  <!-- 聊天对话框 -->
-                  <div class="chat-section">
-                    <h3 class="section-title">对话框</h3>
-                    <div :class="`chat-messages chat-messages-${m._id}`">
+                  <div class="expanded-layout">
+                    <!-- 左侧：Markdown内容 -->
+                    <div class="content-area">
                       <div
-                        v-for="(msg, idx) in chatMessages"
-                        :key="idx"
-                        :class="['chat-message', msg.role]"
-                      >
-                        <div class="message-avatar">
-                          <n-avatar
-                            round
-                            size="small"
-                            :src="msg.role === 'assistant' ? aiAvatar : userAvatar"
-                            :fallback-src="
-                              msg.role === 'assistant' ? aiAvatarFallback : userAvatarFallback
-                            "
-                          />
-                        </div>
-                        <div class="message-content">
-                          <div class="message-bubble">
-                            <!-- 区分用户和助理的消息渲染方式 -->
-                            <template v-if="msg.role === 'assistant'">
-                              <div
-                                class="markdown-content chat-markdown"
-                                v-html="renderChatMarkdown(msg.content)"
-                              ></div>
-                            </template>
-                            <template v-else>
-                              <div class="plain-text">{{ msg.content }}</div>
-                            </template>
-                          </div>
-                        </div>
-                      </div>
-                      <div v-if="isLoadingChat" class="chat-message assistant">
-                        <div class="message-avatar">
-                          <n-avatar
-                            round
-                            size="small"
-                            :src="aiAvatar"
-                            :fallback-src="aiAvatarFallback"
-                          />
-                        </div>
-                        <div class="message-content">
-                          <div class="message-bubble loading">
-                            <n-spin size="small" />
-                            <span style="margin-left: 8px">思考中...</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- 修改后的输入区域 -->
-                    <div class="chat-input-area">
-                      <div class="input-container">
-                        <n-input
-                          v-model:value="userInput"
-                          type="textarea"
-                          placeholder="    输入您的问题..."
-                          :autosize="{ minRows: 1, maxRows: 3 }"
-                          @keydown.enter.prevent="sendChatMessage(m)"
-                          class="message-input"
-                          :disabled="isLoadingChat"
-                        />
-                        <n-button
-                          type="primary"
-                          class="send-button"
-                          :disabled="!userInput.trim() || isLoadingChat"
-                          @click="sendChatMessage(m)"
-                          :loading="isLoadingChat"
-                        >
-                          <template #icon>
-                            <n-icon>
-                              <svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                              </svg>
-                            </n-icon>
-                          </template>
-                        </n-button>
-                      </div>
+                        class="markdown-content"
+                        v-html="renderedMarkdown(addHeadingIds(m.内容))"
+                      ></div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </n-card>
-        </n-timeline-item>
-      </n-timeline>
+              </n-card>
+            </n-timeline-item>
+          </n-timeline>
+        </n-tab-pane>
+        <n-tab-pane name="mood" tab="情绪">
+          <n-data-table :columns="columns_mood" :data="messages_mood" :pagination="pagination" />
+        </n-tab-pane>
+      </n-tabs>
     </div>
   </n-card>
 </template>
@@ -1050,6 +1068,51 @@
     .nav-item {
       width: 100%;
       height: 50px;
+    }
+  }
+
+  /* 固定对话框样式 */
+  .fixed-dialog {
+    .n-dialog {
+      height: 600px;
+      max-height: 80vh;
+
+      .n-dialog__content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+
+        .n-dialog__action {
+          margin-top: auto;
+          flex-shrink: 0;
+        }
+      }
+    }
+  }
+
+  .dialog-content {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 8px; /* 为滚动条留出空间 */
+    height: 500px;
+
+    /* 自定义滚动条样式 */
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+
+      &:hover {
+        background: #a8a8a8;
+      }
     }
   }
 </style>

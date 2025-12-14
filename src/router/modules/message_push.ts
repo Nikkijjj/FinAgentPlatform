@@ -37,6 +37,15 @@ const routes: Array<RouteRecordRaw> = [
         },
         component: () => import('@/views/message_push/history/index.vue'),
       },
+      {
+        path: 'events',
+        name: `${routeName}_events`,
+        meta: {
+          title: '重大事件',
+          activeMenu: 'message_push_events',
+        },
+        component: () => import('@/views/message_push/events/index.vue'),
+      },
     ],
   },
 ];

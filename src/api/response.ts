@@ -18,7 +18,7 @@ export function genRequestHeaders(token: string) {
   };
 }
 
-export async function requestAPI(url, method, headers, body) {
+export async function requestAPI(url, method, headers?, body?) {
   try {
     const response = await request.request({
       url: url,

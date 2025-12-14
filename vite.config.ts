@@ -52,7 +52,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       proxy: {
         '/api': {
           // target: 'http://127.0.0.1:5003',
-          target: 'http://8.130.110.113:5003',
+          target: 'http://192.168.43.29:5003',
           changeOrigin: true,
           // rewrite: (path) => path.replace(/^\/api/, ''),
         },
