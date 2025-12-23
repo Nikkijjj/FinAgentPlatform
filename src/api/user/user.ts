@@ -138,3 +138,16 @@ export async function updateUserInvestmentProfile(
 export async function getRule(token: string) {
   return await requestAPI('/api/user/rules', 'get', genRequestHeaders(token), null);
 }
+
+interface UpdateUserBaseInfoParams {
+  name: string;
+  old_password?: string;
+  new_password?: string;
+}
+
+/**
+ *@description 修改用户名称和/或密码
+ */
+export async function updateUserBaseInfo(token: string, params: UpdateUserBaseInfoParams) {
+  return await requestAPI('/api/user/update_info', 'post', genRequestHeaders(token), params);
+}

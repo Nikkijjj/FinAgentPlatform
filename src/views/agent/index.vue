@@ -125,13 +125,18 @@
               <n-icon size="32">
                 <svg viewBox="0 0 24 24" fill="currentColor">
                   <!-- 折线图表 -->
-                  <path d="M3 17l5-5 4 4 6-8 4 4" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                  <path
+                    d="M3 17l5-5 4 4 6-8 4 4"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    fill="none"
+                  />
                   <!-- 数据点 -->
-                  <circle cx="3" cy="17" r="1.5" fill="currentColor"/>
-                  <circle cx="8" cy="12" r="1.5" fill="currentColor"/>
-                  <circle cx="12" cy="16" r="1.5" fill="currentColor"/>
-                  <circle cx="18" cy="8" r="1.5" fill="currentColor"/>
-                  <circle cx="22" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="3" cy="17" r="1.5" fill="currentColor" />
+                  <circle cx="8" cy="12" r="1.5" fill="currentColor" />
+                  <circle cx="12" cy="16" r="1.5" fill="currentColor" />
+                  <circle cx="18" cy="8" r="1.5" fill="currentColor" />
+                  <circle cx="22" cy="12" r="1.5" fill="currentColor" />
                 </svg>
               </n-icon>
             </div>
@@ -189,7 +194,14 @@
   import DOMPurify from 'dompurify';
   import { useRoute, useRouter } from 'vue-router';
   import { useUserStore } from '@/store/modules/user';
-  import { getChatReply, getChatHistory, ChatMessage } from '@/api/chat/chat';
+  import {
+    getChatReply,
+    getChatHistory,
+    ChatMessage,
+    getMarketReply,
+    getFundamentalReply,
+    getWorkReply,
+  } from '@/api/chat/chat';
   import aiAvatarImage from '@/assets/images/AI_asis.jpg';
 
   const message = useMessage();
@@ -315,11 +327,17 @@
 
     try {
       // 调用聊天接口
-      const response = await getChatReply(userStore.getToken, {
+      const normal_params = {
         session_id: currentSessionId.value,
         user_input: currentInput,
-      });
+      };
 
+      const util_params = {
+        company_of_interest: getStockCode(currentInput),
+        messages: [currentInput],
+      };
+
+      const response = await callAgent(normal_params, util_params);
       if (response.code === 0) {
         // 添加AI响应消息
         messages.value.push({
@@ -341,6 +359,20 @@
     } finally {
       isLoading.value = false;
       scrollToBottom();
+    }
+  };
+
+  // 调用Agent
+  const callAgent = async (normal_params, util_params) => {
+    switch (activeAgent.value) {
+      case 'market':
+        return await getMarketReply(userStore.getToken, util_params);
+      case 'fundamental':
+        return await getFundamentalReply(userStore.getToken, util_params);
+      case 'media':
+        return await getWorkReply(userStore.getToken, util_params);
+      default:
+        return await getChatReply(userStore.getToken, normal_params);
     }
   };
 
@@ -456,6 +488,15 @@
     },
     { immediate: true }
   );
+
+  // 获取股票代码子字符串
+  const getStockCode = (input: string) => {
+    const stockCodeRegex = /【股票代码】\s*:\s*\[(.*?)(?=\s*-|\])/i;
+    const stockCodeMatch = input.match(stockCodeRegex);
+    if (stockCodeMatch && stockCodeMatch[1])
+      return stockCodeMatch[1].replace(/请在此处填写股票代码，如.*?必须/gi, '').trim();
+    return '输入不合规范';
+  };
 
   onMounted(() => {
     // 如果URL中没有session参数，显示初始消息

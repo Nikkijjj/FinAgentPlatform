@@ -211,6 +211,7 @@
               <n-form-item label="账号" class="form-item">
                 <n-input
                   v-model:value="formData.account"
+                  disabled
                   placeholder="请输入登录账号"
                   size="large"
                   round
@@ -221,106 +222,30 @@
               <div class="password-section">
                 <div class="password-header">
                   <h4 class="section-title">密码修改</h4>
-                  <n-text depth="3">为保障账户安全，请谨慎操作</n-text>
                 </div>
 
-                <div v-show="!allow_change_password" class="password-step">
-                  <n-form-item label="验证原密码" class="form-item">
+                <div class="password-step">
+                  <n-form-item label="原密码" class="form-item">
                     <n-input
                       type="password"
                       v-model:value="old_password"
-                      placeholder="请输入原密码以继续"
+                      placeholder="请输入原密码"
                       size="large"
                       round
                       show-password-on="click"
-                      :status="pass"
                       :input-props="{ style: { padding: '12px 16px' } }"
                     />
-                    <template #feedback>
-                      <n-text v-if="old_password && pass === 'success'" type="success" depth="3">
-                        <n-icon size="14" style="vertical-align: -2px">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                          >
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        </n-icon>
-                        原密码验证通过
-                      </n-text>
-                    </template>
                   </n-form-item>
-                </div>
-
-                <div v-show="allow_change_password" class="password-step">
-                  <n-form-item label="新密码" path="password" class="form-item">
+                  <n-form-item label="新密码" class="form-item">
                     <n-input
                       type="password"
-                      v-model:value="formData.password"
+                      v-model:value="new_password"
                       placeholder="请输入新密码"
                       size="large"
                       round
                       show-password-on="click"
                       :input-props="{ style: { padding: '12px 16px' } }"
                     />
-                  </n-form-item>
-
-                  <n-form-item label="确认新密码" class="form-item">
-                    <n-input
-                      type="password"
-                      v-model:value="confirm_password"
-                      placeholder="请再次输入新密码"
-                      size="large"
-                      round
-                      show-password-on="click"
-                      :input-props="{ style: { padding: '12px 16px' } }"
-                      :status="
-                        formData.password &&
-                        confirm_password &&
-                        formData.password === confirm_password
-                          ? 'success'
-                          : formData.password && confirm_password
-                          ? 'error'
-                          : ''
-                      "
-                    />
-                    <template #feedback>
-                      <n-text
-                        v-if="
-                          formData.password &&
-                          confirm_password &&
-                          formData.password !== confirm_password
-                        "
-                        type="error"
-                        depth="3"
-                      >
-                        <n-icon size="14" style="vertical-align: -2px">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                          >
-                            <circle cx="12" cy="12" r="10" />
-                            <line x1="15" y1="9" x2="9" y2="15" />
-                            <line x1="9" y1="9" x2="15" y2="15" />
-                          </svg>
-                        </n-icon>
-                        两次输入的密码不一致
-                      </n-text>
-                    </template>
                   </n-form-item>
                 </div>
               </div>
@@ -337,7 +262,12 @@
   import { ref, reactive, onMounted, computed, watch } from 'vue';
   import { FormItemRule, useMessage } from 'naive-ui';
   import { useUser } from '@/store/modules/user';
-  import { emptyStock, emptyWatchlistStock, UserInfoType } from '@/api/user/user';
+  import {
+    emptyStock,
+    emptyWatchlistStock,
+    updateUserBaseInfo,
+    UserInfoType,
+  } from '@/api/user/user';
   import { mockEmptyUserInfo } from '../../../../mock/user';
   import { parseStr, parseTime } from '@/api/time';
   import { getUserInvestmentProfile, updateUserInvestmentProfile } from '@/api/user/user';
@@ -395,10 +325,8 @@
   const formRules = {
     password: {
       validator: (rule: FormItemRule, value: string) => {
-        if (!allow_change_password.value || !isEditing.value) return true;
+        if (!isEditing.value) return true;
         if (!value) return new Error('密码不能为空');
-        if (!confirm_password.value) return new Error('请确认密码');
-        if (confirm_password.value !== value) return new Error('两次输入密码不一致');
         return true;
       },
       trigger: 'blur',
@@ -424,33 +352,20 @@
 
   const allow_change_password = ref(false);
   const old_password = ref('');
-  const confirm_password = ref('');
-  const pass = computed(() => {
-    if (!old_password.value) return '';
-    return old_password.value === formData.password ? 'success' : 'error';
-  });
-
-  const stopWatchPassword = watch(pass, (newVal) => {
-    if (newVal === 'success' && isEditing.value) {
-      allow_change_password.value = true;
-      stopWatchPassword();
-    }
-  });
+  const new_password = ref('');
 
   const enterEditMode = () => {
     isEditing.value = true;
     originalFormData.value = JSON.parse(JSON.stringify(formData));
-    allow_change_password.value = false;
     old_password.value = '';
-    confirm_password.value = '';
+    new_password.value = '';
   };
 
   const cancelEdit = () => {
     isEditing.value = false;
     Object.assign(formData, JSON.parse(JSON.stringify(originalFormData.value)));
-    allow_change_password.value = false;
     old_password.value = '';
-    confirm_password.value = '';
+    new_password.value = '';
   };
 
   // 其他方法保持不变...
@@ -552,22 +467,27 @@
     const transData = JSON.parse(JSON.stringify(formData));
     transTimeToString(transData);
 
-    const requestParams = {
-      user_investment_profile: transData.user_investment_profile,
-      user_report_template: transData.report_template,
-    };
+    const old_name = originalFormData.value.name;
+    const new_name = formData.name;
+    const isNameChanged = old_name === new_name;
+    const isPasswordChanged = old_password.value !== '' && new_password.value !== '';
+
+    const requestParams = genRequestParams(isPasswordChanged, isNameChanged, {
+      new_name: new_name,
+      old_password: old_password.value,
+      new_password: new_password.value,
+    });
 
     try {
       userStore.setUserInfo(transData);
-      const response = await updateUserInvestmentProfile(userStore.getToken, requestParams);
+      const response = await updateUserBaseInfo(userStore.getToken, requestParams);
 
       if (response.code === 0) {
         message.success(response.msg);
         originalFormData.value = JSON.parse(JSON.stringify(formData));
         isEditing.value = false;
-        allow_change_password.value = false;
         old_password.value = '';
-        confirm_password.value = '';
+        new_password.value = '';
       } else {
         message.error(response.msg);
       }
@@ -575,6 +495,25 @@
       message.error('网络异常，修改失败');
     } finally {
       loading.value = false;
+    }
+  };
+
+  const genRequestParams = (isPasswordChanged, isNameChanged, data) => {
+    if (isPasswordChanged && isNameChanged) {
+      return {
+        name: data.new_name,
+        old_password: data.old_password,
+        new_password: data.new_password,
+      };
+    } else if (isPasswordChanged) {
+      return {
+        old_password: data.old_password,
+        new_password: data.new_password,
+      };
+    } else {
+      return {
+        name: data.new_name,
+      };
     }
   };
 </script>

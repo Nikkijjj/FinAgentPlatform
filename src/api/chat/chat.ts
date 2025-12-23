@@ -38,3 +38,15 @@ export async function getChatHistoryList(token: string) {
 export async function getChatHistory(token: string, params: ChatHistoryParams) {
   return await requestAPI('/api/chat/get/history', 'post', genRequestHeaders(token), params);
 }
+
+export async function getMarketReply(token: string, params) {
+  return await requestAPI('/api/market/get/report', 'post', genRequestHeaders(token), params);
+}
+
+export async function getFundamentalReply(token: string, params) {
+  return await requestAPI('/api/fundamentals/get/report', 'post', genRequestHeaders(token), params);
+}
+
+export async function getWorkReply(token: string, params) {
+  return await requestAPI('/api/work/get/report', 'post', genRequestHeaders(token), params);
+}
