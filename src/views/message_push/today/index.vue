@@ -248,8 +248,7 @@
   };
 
   onMounted(async () => {
-    // const day = getLocalDate();
-    const day = '2025-12-12';
+    const day = getLocalDate();
     const params = {
       day: day,
     };

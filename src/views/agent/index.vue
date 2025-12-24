@@ -282,11 +282,16 @@
 
   // 选择Agent
   const selectAgent = (agent: string) => {
-    activeAgent.value = agent;
-    userInput.value = agentTemplates[agent as keyof typeof agentTemplates];
+    if (agent == activeAgent.value) {
+      activeAgent.value = '';
+      userInput.value = '';
+      message.success(`已退出${getAgentName(agent)}模式`);
+    } else {
+      activeAgent.value = agent;
+      userInput.value = agentTemplates[agent as keyof typeof agentTemplates];
 
-    message.success(`已切换到${getAgentName(agent)}模式`);
-
+      message.success(`已切换到${getAgentName(agent)}模式`);
+    }
     // 滚动到对话框底部并聚焦输入框
     nextTick(() => {
       scrollToBottom();
@@ -338,6 +343,7 @@
       };
 
       const response = await callAgent(normal_params, util_params);
+      activeAgent.value = '';
       if (response.code === 0) {
         // 添加AI响应消息
         messages.value.push({
