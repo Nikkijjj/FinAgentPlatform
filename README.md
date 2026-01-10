@@ -7,7 +7,7 @@
 [![Vite](https://img.shields.io/badge/Vite-5.0%2B-yellow)](https://vitejs.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**AI驱动的个性化投资盯盘系统前端实现**
+**Agent驱动的个性化投资盯盘系统前端实现**
 
 [English](#english) | [中文](#中文)
 
