@@ -221,8 +221,6 @@ VITE_LOG_LEVEL=info
 
 **An Agent-Powered Personalized Investment Monitoring System Frontend**
 
-[中文文档](#中文) | [English](#english)
-
 </div>
 
 ---
