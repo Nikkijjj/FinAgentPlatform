@@ -399,44 +399,6 @@ refactor: Code refactoring
 test: Test-related changes
 chore: Build or tooling changes
 ```
-
-### Component Development Guidelines
-
-1. **Basic Components**: No business logic, high reusability, clear props interface
-2. **Business Components**: Encapsulate specific business logic, data-cohesive
-3. **Layout Components**: Handle overall page layout, responsive design support
-
-Example:
-```vue
-<template>
-  <div class="monitor-card">
-    <header class="monitor-card__header">
-      <h3>{{ title }}</h3>
-    </header>
-    <main class="monitor-card__body">
-      <slot />
-    </main>
-  </div>
-</template>
-
-<script setup lang="ts">
-interface Props {
-  title: string;
-}
-
-defineProps<Props>();
-</script>
-
-<style scoped lang="scss">
-.monitor-card {
-  // BEM naming convention
-  &__header {
-    padding: 16px;
-  }
-}
-</style>
-```
-
 ---
 
 ## 📊 Performance Optimization
