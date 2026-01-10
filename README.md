@@ -82,83 +82,6 @@
 | 代码规范 | ESLint + Prettier | 8.0+/3.0+ | 代码语法校验、格式统一 |
 | UI 组件库 | Element Plus | 2.4+ | 基础 UI 组件快速开发 |
 
-### 系统架构图
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     接入层 (Nginx)                          │
-├─────────────────────────────────────────────────────────────┤
-│                     API网关 (Flask)                         │
-├─────────────────────────────────────────────────────────────┤
-│               服务层 (业务服务模块)                          │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  │
-│  │AI问答服务│  │会话管理  │  │用户服务  │  │分析师服务│  │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘  │
-├─────────────────────────────────────────────────────────────┤
-│            业务基础层 (Agent协同 & AI能力)                   │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  │
-│  │规则生成  │  │报告定制  │  │报告生成  │  │任务调度  │  │
-│  │Agent     │  │Agent     │  │Agent     │  │智能体池  │  │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘  │
-├─────────────────────────────────────────────────────────────┤
-│               数据层 (Redis + MongoDB)                       │
-├─────────────────────────────────────────────────────────────┤
-│               基础设施层 (Docker + 监控)                     │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 📦 项目结构
-
-```
-src/
-├── api/                      # 接口请求层
-│   ├── index.ts             # API统一出口
-│   ├── user.ts              # 用户相关接口
-│   ├── stock.ts             # 股票数据接口
-│   ├── report.ts            # 报告相关接口
-│   └── watch-rule.ts        # 盯盘规则接口
-├── assets/                   # 静态资源
-│   ├── images/              # 图片资源
-│   ├── styles/              # 全局样式
-│   └── icons/               # 图标资源
-├── components/               # 组件库
-│   ├── common/              # 基础组件（按钮、输入框等）
-│   ├── business/            # 业务组件（持仓卡片、行情看板等）
-│   └── layout/              # 布局组件（侧边栏、头部等）
-├── router/                   # 路由配置
-│   ├── index.ts             # 路由主入口
-│   ├── guards.ts            # 路由守卫
-│   └── routes.ts            # 静态/动态路由表
-├── stores/                   # 状态管理（Pinia）
-│   ├── index.ts             # Store统一出口
-│   ├── user.ts              # 用户信息Store
-│   ├── stock.ts             # 股票数据Store
-│   └── report.ts            # 报告Store
-├── utils/                    # 工具函数
-│   ├── request.ts           # Axios请求封装
-│   ├── auth.ts              # 认证工具
-│   ├── format.ts            # 格式化工具
-│   └── validate.ts          # 校验工具
-├── views/                    # 页面视图
-│   ├── dashboard/           # 首页看板
-│   ├── portfolio/           # 持仓管理
-│   ├── watchlist/           # 自选股管理
-│   ├── rules/               # 盯盘规则
-│   ├── reports/             # 报告中心
-│   └── settings/            # 个人设置
-├── App.vue                   # 根组件
-├── main.ts                   # 应用入口
-└── types/                    # TypeScript类型定义
-    ├── index.ts             # 基础类型
-    ├── user.ts              # 用户相关类型
-    ├── stock.ts             # 股票相关类型
-    └── report.ts            # 报告相关类型
-```
-
----
-
 ## 🚀 快速开始
 
 ### 环境要求
@@ -245,65 +168,6 @@ VITE_LOG_LEVEL=info
 
 ---
 
-## 🎨 开发规范
-
-### 代码规范
-
-- 使用 **ESLint** 进行语法校验
-- 使用 **Prettier** 统一代码格式
-- 使用 **Husky** + **lint-staged** 在提交前自动校验
-
-### Git提交规范
-
-```
-feat: 新功能
-fix: 修复bug
-docs: 文档更新
-style: 代码格式调整
-refactor: 重构代码
-test: 测试相关
-chore: 构建或辅助工具的变动
-```
-
-### 组件开发规范
-
-1. **基础组件**：无业务逻辑，高复用性，props接口清晰
-2. **业务组件**：内聚特定业务逻辑，可接收业务数据
-3. **布局组件**：负责页面整体布局，支持响应式适配
-
-示例：
-```vue
-<template>
-  <div class="monitor-card">
-    <header class="monitor-card__header">
-      <h3>{{ title }}</h3>
-    </header>
-    <main class="monitor-card__body">
-      <slot />
-    </main>
-  </div>
-</template>
-
-<script setup lang="ts">
-interface Props {
-  title: string;
-}
-
-defineProps<Props>();
-</script>
-
-<style scoped lang="scss">
-.monitor-card {
-  // BEM命名规范
-  &__header {
-    padding: 16px;
-  }
-}
-</style>
-```
-
----
-
 ## 📊 性能优化
 
 - **代码分割**：Vite自动按模块拆分，按需加载
@@ -324,17 +188,6 @@ defineProps<Props>();
 
 ---
 
-## 🌐 浏览器支持
-
-| 浏览器 | 最低版本 |
-|--------|----------|
-| Chrome | 90+ |
-| Firefox | 90+ |
-| Safari | 14+ |
-| Edge | 90+ |
-
----
-
 ## 🤝 贡献指南
 
 欢迎贡献代码、提出问题和建议！
@@ -350,23 +203,6 @@ defineProps<Props>();
 ## 📄 许可证
 
 本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
-
----
-
-## 🙏 致谢
-
-- [Vue.js](https://vuejs.org/) - 渐进式JavaScript框架
-- [Vite](https://vitejs.dev/) - 下一代前端构建工具
-- [Element Plus](https://element-plus.org/) - Vue 3 UI组件库
-- [ECharts](https://echarts.apache.org/) - 可视化图表库
-
----
-
-## 📞 联系方式
-
-- 项目地址: [https://github.com/your-username/intelligent-stock-monitor-frontend](https://github.com/your-username/intelligent-stock-monitor-frontend)
-- 问题反馈: [Issues](https://github.com/your-username/intelligent-stock-monitor-frontend/issues)
-- 电子邮件: your-email@example.com
 
 ---
 
@@ -395,5 +231,3 @@ An AI-powered personalized stock monitoring system that revolutionizes tradition
 *返回中文版本*
 
 ---
-
-**⭐ 如果这个项目对你有帮助，请给个Star支持一下！**
