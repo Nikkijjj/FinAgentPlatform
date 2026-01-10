@@ -212,22 +212,286 @@ VITE_LOG_LEVEL=info
 
 # Intelligent Personalized Stock Monitor - Frontend
 
-An AI-powered personalized stock monitoring system that revolutionizes traditional trading by combining natural language interaction with intelligent planning. The frontend is built with Vue 3 + TypeScript + Vite, providing an intuitive interface for customizing investment goals, managing portfolios, and receiving AI-generated reports and real-time alerts.
+<div align="center">
 
-## ✨ Key Features
+[![Vue 3](https://img.shields.io/badge/Vue-3.4%2B-brightgreen)](https://vuejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-blue)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-5.0%2B-yellow)](https://vitejs.dev/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-- **Natural Language Input**: Describe investment goals conversationally, no complex configuration needed
-- **AI Rule Generation**: Automatically converts user needs into executable monitoring rules
-- **Custom Report Builder**: Drag-and-drop interface for personalized report templates
-- **Real-time Event Monitoring**: Minute-level market data tracking with instant alerts
-- **Multi-Agent Collaboration**: Macro, industry, stock, and sentiment analysis agents working together
+**An Agent-Powered Personalized Investment Monitoring System Frontend**
 
-[View full documentation](#中文)
+[中文文档](#中文) | [English](#english)
+
+</div>
+
+---
+
+## 📖 Project Overview
+
+The Intelligent Personalized Stock Monitoring System is an innovative investment assistant platform based on the "User-Driven + AI-Assisted" design philosophy. The system fundamentally solves the pain points of traditional monitoring systems (high professional barriers, complex operations) and emerging intelligent financial assistants (lack of personalization) through **natural language interaction** and **AI intelligent planning**.
+
+This project is the frontend implementation, built with **Vue 3 + TypeScript + Vite**, providing an intuitive, efficient, and scalable user interface that enables users to easily customize investment goals, manage portfolios, receive intelligent analysis reports, and get real-time alerts.
+
+### 🎯 Core Innovations
+
+- **Zero-Barrier Requirement Input**: Describe investment goals in natural language, no manual configuration of complex indicators
+- **Intelligent Rule Generation**: AI automatically converts requirements into executable monitoring rules
+- **Personalized Report Customization**: Supports custom report frameworks, content dimensions, and push frequencies
+- **Real-Time Event Monitoring**: Minute-level market data monitoring with instant alert triggers
+- **Multi-Agent Collaboration**: Four analysis agents (macro, industry, stock, sentiment) working intelligently together
+
+---
+
+## ✨ Core Features
+
+### 1️⃣ User Personalized Requirements Management
+- **Investment Goal Setting**: Multi-dimensional configuration including annualized return rate, investment horizon, risk tolerance
+- **Portfolio Management**: Visual portfolio stock management with batch import and real-time P&L calculation
+- **Watchlist Monitoring**: Custom group management (focus pool, to-buy pool, holding pool, to-sell pool)
+- **Information Dimension Preferences**: Flexible configuration of information dimensions to follow (PE, revenue growth, industry policies, etc.)
+
+### 2️⃣ Intelligent Watch Rule Generation
+- **AI-Assisted Generation**: Automatically generates monitoring rules based on user investment goals and positions
+- **Rule Visualization**: Clear display of monitoring indicators, trigger conditions, and priority levels
+- **Intelligent Threshold Recommendation**: Provides scientific threshold suggestions based on historical data and industry averages
+- **Real-Time Rule Validation**: Prevents rule conflicts and ensures logical consistency
+
+### 3️⃣ Personalized Reporting System
+- **Report Template Library**: Built-in daily, weekly, monthly, and other standard templates
+- **Custom Framework Builder**: Drag-and-drop interface for customizing report sections and order
+- **Multi-Dimensional Analysis**: Integrates comprehensive analysis of macro, industry, stock, and sentiment
+- **Smart Chart Generation**: Automatically generates trend charts, comparison graphs, heatmaps, and other visualizations
+- **Multi-Format Export**: Supports HTML, PDF, Excel formats
+
+### 4️⃣ Real-Time Alerts & Push Notifications
+- **Multiple Alert Types**: Rule-triggered alerts, manual alerts, system notifications
+- **Multi-Channel Push**: WebSocket real-time push, email reminders, SMS notifications (requires configuration)
+- **Read Status Management**: Clear notification management with read/unread status tracking
+- **Historical Record Tracking**: Complete alert history records with traceability
+
+### 5️⃣ Intelligent Analysis Dashboard
+- **Market Overview**: Real-time market summary, hot event list
+- **In-Depth Stock Analysis**: PE/PB percentile, financial indicators, sentiment analysis
+- **Industry Prosperity Index**: Industry scoring based on revenue growth, profit margin, and policy impact
+- **Sentiment Index**: Comprehensive sentiment score combining news, capital flow, and forum heat
+
+---
+
+## 🛠️ Technical Architecture
+
+### Frontend Technology Stack
+
+| Category | Technology | Version | Application Scenario |
+|----------|------------|---------|---------------------|
+| Frontend Framework | Vue.js | 3.4+ | Core view layer, developed with Composition API |
+| Build Tool | Vite | 5.0+ | Project building, dev server, packaging optimization |
+| Type System | TypeScript | 5.0+ | Global type constraints, improved code maintainability |
+| Routing | Vue Router | 4.2+ | Page routing, permission interception, lazy loading |
+| State Management | Pinia | 2.1+ | Global state management (user info, permissions, config) |
+| HTTP Client | Axios | 1.6+ | API request encapsulation, interceptors, error handling |
+| CSS Preprocessor | SCSS | 1.6+ | Global style variables, modular styles, style reuse |
+| Code Linting | ESLint + Prettier | 8.0+/3.0+ | Code syntax validation, unified formatting |
+| UI Library (Optional) | Element Plus | 2.4+ | Basic UI components (buttons, forms, tables) for rapid development |
+
+---
+
+## 🚀 Quick Start
+
+### Environment Requirements
+
+- Node.js: `>= 18.0.0`
+- npm/pnpm: `>= 8.0.0`
+- Modern browsers (Chrome 90+, Firefox 90+, Safari 14+)
+
+### Install Dependencies
+
+```bash
+# Clone the project
+git clone https://github.com/your-username/intelligent-stock-monitor-frontend.git
+cd intelligent-stock-monitor-frontend
+
+# Install dependencies (pnpm recommended)
+pnpm install
+
+# Or use npm
+npm install
+```
+
+### Development
+
+```bash
+# Start development server
+pnpm dev
+
+# Application will run at http://localhost:3000
+```
+
+### Production Build
+
+```bash
+# Production build
+pnpm build
+
+# Output in dist/ directory
+```
+
+### Code Linting & Formatting
+
+```bash
+# ESLint check
+pnpm lint
+
+# Prettier format
+pnpm format
+```
+
+---
+
+## ⚙️ Environment Configuration
+
+The project supports multi-environment configuration, with config files in the project root:
+
+```bash
+.env.development        # Development environment
+.env.test              # Test environment
+.env.production        # Production environment
+```
+
+### Core Configuration Items
+
+```env
+# API base URL
+VITE_API_BASE_URL=http://localhost:5000/api
+
+# WebSocket URL
+VITE_WS_BASE_URL=ws://localhost:5000/ws
+
+# Application title
+VITE_APP_TITLE=Intelligent Stock Monitor
+
+# Enable mock data (development)
+VITE_USE_MOCK=true
+
+# Default language
+VITE_DEFAULT_LANGUAGE=en-US
+
+# Log level
+VITE_LOG_LEVEL=info
+```
+
+---
+
+## 🎨 Development Guidelines
+
+### Code Standards
+
+- Use **ESLint** for syntax validation
+- Use **Prettier** for unified code formatting
+- Use **Husky** + **lint-staged** for pre-commit validation
+
+### Git Commit Convention
+
+```
+feat: New feature
+fix: Bug fix
+docs: Documentation update
+style: Code style adjustment
+refactor: Code refactoring
+test: Test-related changes
+chore: Build or tooling changes
+```
+
+### Component Development Guidelines
+
+1. **Basic Components**: No business logic, high reusability, clear props interface
+2. **Business Components**: Encapsulate specific business logic, data-cohesive
+3. **Layout Components**: Handle overall page layout, responsive design support
+
+Example:
+```vue
+<template>
+  <div class="monitor-card">
+    <header class="monitor-card__header">
+      <h3>{{ title }}</h3>
+    </header>
+    <main class="monitor-card__body">
+      <slot />
+    </main>
+  </div>
+</template>
+
+<script setup lang="ts">
+interface Props {
+  title: string;
+}
+
+defineProps<Props>();
+</script>
+
+<style scoped lang="scss">
+.monitor-card {
+  // BEM naming convention
+  &__header {
+    padding: 16px;
+  }
+}
+</style>
+```
+
+---
+
+## 📊 Performance Optimization
+
+- **Code Splitting**: Vite automatically splits code by modules for on-demand loading
+- **Component Lazy Loading**: Route-level components are automatically lazy-loaded
+- **Image Optimization**: WebP format support with automatic compression
+- **Caching Strategy**: Long-term caching for static resources, reasonable caching for API data
+- **CDN Acceleration**: Use CDN for large dependencies (Vue, Element Plus) in production
+
+---
+
+## 🔒 Security Features
+
+- **XSS Protection**: Automatic escaping of user input content
+- **CSRF Protection**: Token-based request validation
+- **Data Desensitization**: Automatic desensitization of sensitive data in logs and UI
+- **Permission Control**: Route-level and button-level permission control
+- **HTTPS Enforcement**: Force HTTPS access in production environment
+
+---
+
+## 🌐 Browser Support
+
+| Browser | Minimum Version |
+|---------|-----------------|
+| Chrome | 90+ |
+| Firefox | 90+ |
+| Safari | 14+ |
+| Edge | 90+ |
+
+---
+
+## 🤝 Contributing
+
+Welcome to contribute code, report issues, and suggest improvements!
+
+1. Fork this repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'feat: Add new feature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
 
 ---
 
 <div id="中文"></div>
 
-*返回中文版本*
+*[View Chinese Version](#中文)*
 
 ---
