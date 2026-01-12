@@ -36,23 +36,28 @@
         </div>
       </div>
 
-      <!-- 规则类型统计 -->
+      <!-- 规则类型统计 - 紧凑卡片布局 -->
       <div class="rules-summary">
-        <n-space :wrap="false" :size="[24, 16]">
-          <n-card class="summary-card" size="small" hoverable v-for="(type, index) in ruleTypeStats" :key="index">
-            <div class="summary-card-content">
-              <div class="summary-icon" :style="{ backgroundColor: type.color + '20' }">
-                <n-icon size="24" :color="type.color">
+        <div class="summary-scroll-container">
+          <div class="summary-scroll-content">
+            <div 
+              class="summary-item" 
+              v-for="(type, index) in ruleTypeStats" 
+              :key="index"
+              :style="{ '--type-color': type.color }"
+            >
+              <div class="summary-item-icon">
+                <n-icon size="20" :color="type.color">
                   <component :is="type.icon" />
                 </n-icon>
               </div>
-              <div class="summary-info">
-                <div class="summary-count">{{ type.count }}</div>
-                <div class="summary-label">{{ type.label }}</div>
+              <div class="summary-item-info">
+                <div class="summary-item-count">{{ type.count }}</div>
+                <div class="summary-item-label">{{ type.label }}</div>
               </div>
             </div>
-          </n-card>
-        </n-space>
+          </div>
+        </div>
       </div>
 
       <!-- 规则列表 -->
@@ -95,6 +100,16 @@
                 </n-tag>
               </div>
               <div class="rule-actions">
+                <n-button size="tiny" text @click="editRule(rule)">
+                  <template #icon>
+                    <n-icon>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </n-icon>
+                  </template>
+                </n-button>
                 <n-button size="tiny" text @click="toggleRuleStatus(index)">
                   <template #icon>
                     <n-icon>
@@ -107,7 +122,6 @@
                       </svg>
                     </n-icon>
                   </template>
-                  {{ rule.active ? '停用' : '启用' }}
                 </n-button>
               </div>
             </div>
@@ -138,7 +152,7 @@
                   <span class="detail-value">{{ rule.trigger_condition }}</span>
                 </div>
 
-                <div class="detail-item">
+                <!-- <div class="detail-item">
                   <n-icon size="16" class="detail-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <circle cx="12" cy="12" r="10" />
@@ -147,10 +161,10 @@
                   </n-icon>
                   <span class="detail-label">最后触发：</span>
                   <span class="detail-value">{{ rule.last_triggered || '暂未触发' }}</span>
-                </div>
+                </div> -->
               </div>
 
-              <div class="rule-progress">
+              <!-- <div class="rule-progress">
                 <div class="progress-info">
                   <span>触发频率</span>
                   <span>{{ rule.trigger_count || 0 }}次</span>
@@ -162,7 +176,7 @@
                   :border-radius="2"
                   status="success"
                 />
-              </div>
+              </div> -->
             </div>
 
             <div class="rule-card-footer">
@@ -266,7 +280,7 @@
               <div class="detail-item-value">{{ selectedRule.trigger_condition }}</div>
             </div>
 
-            <div class="detail-item">
+            <!-- <div class="detail-item">
               <div class="detail-item-label">
                 <n-icon>
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -277,9 +291,9 @@
                 最后触发时间
               </div>
               <div class="detail-item-value">{{ selectedRule.last_triggered || '暂未触发' }}</div>
-            </div>
+            </div> -->
 
-            <div class="detail-item">
+            <!-- <div class="detail-item">
               <div class="detail-item-label">
                 <n-icon>
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -290,7 +304,7 @@
                 触发次数
               </div>
               <div class="detail-item-value">{{ selectedRule.trigger_count || 0 }} 次</div>
-            </div>
+            </div> -->
 
             <div class="detail-item">
               <div class="detail-item-label">
@@ -306,15 +320,123 @@
               <div class="detail-item-value">{{ selectedRule.created_at || '未知' }}</div>
             </div>
           </div>
+
+          <div class="detail-actions">
+            <n-space justify="end">
+              <n-button @click="showDetailModal = false">关闭</n-button>
+              <n-button type="primary" @click="editRule(selectedRule)">
+                <template #icon>
+                  <n-icon>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                  </n-icon>
+                </template>
+                编辑规则
+              </n-button>
+            </n-space>
+          </div>
         </div>
       </n-card>
     </n-modal>
-  </div>
+
+    <!-- 编辑规则模态框 -->
+  <n-modal v-model:show="showEditModal">
+    <n-card
+      style="width: 700px"
+      :title="isEditing ? '编辑规则' : '创建规则'"
+      :bordered="false"
+      size="huge"
+      role="dialog"
+      aria-modal="true"
+    >
+      <template #header-extra>
+        <n-button quaternary circle @click="showEditModal = false">
+          <template #icon>
+            <n-icon>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </n-icon>
+          </template>
+        </n-button>
+      </template>
+
+      <n-form
+        ref="editFormRef"
+        :model="editForm"
+        :rules="editFormRules"
+        label-placement="left"
+        label-width="auto"
+        label-align="right"
+        require-mark-placement="right-hanging"
+        size="large"
+      >
+        <n-grid :cols="2" :x-gap="24">
+          <n-gi>
+            <n-form-item label="规则类型" path="event_type">
+              <n-input
+                v-model:value="editForm.event_type"
+                placeholder="请输入规则类型，如：Trading、Capital等"
+                clearable
+              />
+            </n-form-item>
+          </n-gi>
+          <n-gi>
+            <n-form-item label="规则子类型" path="event_subtype">
+              <n-input
+                v-model:value="editForm.event_subtype"
+                placeholder="请输入规则子类型"
+                clearable
+              />
+            </n-form-item>
+          </n-gi>
+        </n-grid>
+
+        <n-form-item label="规则描述" path="event_description">
+          <n-input
+            v-model:value="editForm.event_description"
+            type="textarea"
+            placeholder="请输入规则描述"
+            :rows="2"
+          />
+        </n-form-item>
+
+        <n-form-item label="关联标的" path="related_stock">
+          <n-input
+            v-model:value="editForm.related_stock"
+            placeholder="请输入股票代码、股票名称或行业名称"
+          />
+        </n-form-item>
+
+        <n-form-item label="触发条件" path="trigger_condition">
+          <n-input
+            v-model:value="editForm.trigger_condition"
+            type="textarea"
+            placeholder="请输入详细的触发条件"
+            :rows="3"
+          />
+        </n-form-item>
+      </n-form>
+
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="showEditModal = false">取消</n-button>
+          <n-button type="primary" :loading="saving" @click="saveRule">
+            保存规则
+          </n-button>
+        </n-space>
+      </template>
+    </n-card>
+  </n-modal>
+</div>
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted } from 'vue';
-  import { useMessage, NIcon } from 'naive-ui';
+  import { ref, computed, onMounted, watch, h } from 'vue';
+  import { useMessage, NIcon, type FormInst } from 'naive-ui';
   import { 
     BarChartOutlined,
     LineChartOutlined,
@@ -326,7 +448,8 @@
   } from '@vicons/antd';
   // 导入您的API和store
   import { useUser } from '@/store/modules/user';
-  import { getRule } from '@/api/user/user'; // 根据您的路径调整
+  import { getRule, updateRules } from '@/api/user/user';
+
 
   // 定义规则数据类型
   interface MonitoringRule {
@@ -339,6 +462,9 @@
     last_triggered?: string;
     trigger_count?: number;
     created_at?: string;
+    trigger_threshold?: number;
+    notification_methods?: string[];
+    monitoring_frequency?: string;
   }
 
   // 规则类型配置
@@ -349,7 +475,8 @@
     Industry: { label: '行业', color: '#8b5cf6', icon: BuildOutlined },
     Macro: { label: '宏观', color: '#ef4444', icon: GlobalOutlined },
     Sentiment: { label: '情绪', color: '#ec4899', icon: CommentOutlined },
-    News: { label: '新闻', color: '#14b8a6', icon: ReadOutlined }
+    News: { label: '新闻', color: '#14b8a6', icon: ReadOutlined },
+    Other: { label: '其他', color: '#64748b', icon: BuildOutlined }
   };
 
   // 事件子类型映射
@@ -371,13 +498,85 @@
     'regulatory_news': '监管新闻'
   };
 
+  // 事件子类型选项（按类型分组）
+  const eventSubtypeOptionsByType: Record<string, Array<{ label: string; value: string }>> = {
+    Trading: [
+      { label: '异常下跌', value: 'price_fall_abnormal' },
+      { label: '均线突破', value: 'ma_break_up' },
+      { label: '异常上涨', value: 'price_rise_abnormal' }
+    ],
+    Capital: [
+      { label: '北向流入异常', value: 'northbound_inflow_abnormal' }
+    ],
+    Company: [
+      { label: '业绩预告', value: 'performance_forecast' },
+      { label: '财报变化', value: 'financial_report_change' }
+    ],
+    Industry: [
+      { label: '行业一致性上涨', value: 'industry_consistency_rise' },
+      { label: '行业龙头波动', value: 'industry_leader_fluctuation' }
+    ],
+    Macro: [
+      { label: '央行政策', value: 'macro_央行政策' },
+      { label: '金融监管', value: 'macro_金融监管' }
+    ],
+    Sentiment: [
+      { label: '关注度激增', value: 'attention_surge' },
+      { label: '热门榜前十', value: 'hot_list_top10' }
+    ],
+    News: [
+      { label: '正面新闻', value: 'positive_news' },
+      { label: '负面新闻', value: 'negative_news' },
+      { label: '监管新闻', value: 'regulatory_news' }
+    ]
+  };
+
   const message = useMessage();
   const userStore = useUser(); // 使用user store
   const loading = ref(true);
   const rulesData = ref<MonitoringRule[]>([]);
   const selectedType = ref<string>('');
   const showDetailModal = ref(false);
+  const showEditModal = ref(false);
   const selectedRule = ref<MonitoringRule | null>(null);
+  const showScrollHint = ref(false); // 控制滚动提示显示
+  const saving = ref(false);
+  const isEditing = ref(false);
+  const editFormRef = ref<FormInst | null>(null);
+
+  // 编辑表单
+  const editForm = ref({
+    event_type: '',
+    event_subtype: '',
+    event_description: '',
+    related_stock: '',
+    trigger_condition: '',
+    active: true,
+    trigger_threshold: 5,
+    notification_methods: ['app'],
+    monitoring_frequency: 'realtime'
+  });
+
+  // 表单验证规则
+  const editFormRules = {
+    event_type: [
+      { required: true, message: '请选择规则类型', trigger: ['blur', 'change'] }
+    ],
+    event_subtype: [
+      { required: true, message: '请选择规则子类型', trigger: ['blur', 'change'] }
+    ],
+    event_description: [
+      { required: true, message: '请输入规则描述', trigger: ['blur', 'input'] },
+      { min: 5, message: '规则描述至少5个字符', trigger: ['blur', 'input'] }
+    ],
+    related_stock: [
+      { required: true, message: '请输入关联标的', trigger: ['blur', 'input'] }
+    ],
+    trigger_condition: [
+      { required: true, message: '请输入触发条件', trigger: ['blur', 'input'] },
+      { min: 10, message: '触发条件至少10个字符', trigger: ['blur', 'input'] }
+    ]
+  };
 
   // 活跃规则数量
   const activeRulesCount = computed(() => {
@@ -386,41 +585,79 @@
 
   // 计算规则类型统计
   const ruleTypeStats = computed(() => {
-    const stats = Object.entries(eventTypeConfig).map(([key, config]) => {
-      const count = rulesData.value.filter(rule => rule.event_type === key).length;
-      return {
+    const statsMap = new Map();
+    
+    // 初始化所有预定义类型
+    Object.entries(eventTypeConfig).forEach(([key, config]) => {
+      statsMap.set(key, {
         key,
         label: config.label,
-        count,
+        count: 0,
         color: config.color,
         icon: config.icon
-      };
+      });
     });
-    return stats.filter(stat => stat.count > 0);
+    
+    // 统计规则类型
+    rulesData.value.forEach(rule => {
+      let typeKey = rule.event_type;
+      // 如果类型不在预定义中，归类为"其他"
+      if (!statsMap.has(typeKey)) {
+        typeKey = 'Other';
+      }
+      
+      if (statsMap.has(typeKey)) {
+        const stat = statsMap.get(typeKey);
+        stat.count += 1;
+      }
+    });
+    
+    // 过滤掉数量为0的类型（除了其他类型）
+    const stats = Array.from(statsMap.values());
+    return stats.filter(stat => stat.count > 0 || stat.key === 'Other');
   });
 
   // 规则类型筛选选项
   const typeOptions = computed(() => {
-    return Object.entries(eventTypeConfig).map(([value, config]) => ({
+    const options = Object.entries(eventTypeConfig).map(([value, config]) => ({
       label: config.label,
       value
     }));
+    return options;
   });
+
 
   // 过滤后的规则
   const filteredRules = computed(() => {
     if (!selectedType.value) return rulesData.value;
+    
+    if (selectedType.value === 'Other') {
+      // 筛选所有不在预定义类型中的规则
+      const predefinedTypes = Object.keys(eventTypeConfig);
+      return rulesData.value.filter(rule => 
+        !predefinedTypes.includes(rule.event_type)
+      );
+    }
+    
     return rulesData.value.filter(rule => rule.event_type === selectedType.value);
   });
 
   // 获取事件类型标签
   const getEventTypeLabel = (type: string) => {
-    return eventTypeConfig[type as keyof typeof eventTypeConfig]?.label || type;
+    if (eventTypeConfig[type as keyof typeof eventTypeConfig]) {
+      return eventTypeConfig[type as keyof typeof eventTypeConfig].label;
+    }
+    // 如果类型不在预定义中，归类为"其他"
+    return '其他';
   };
 
   // 获取事件类型颜色
   const getEventTypeColor = (type: string) => {
-    return eventTypeConfig[type as keyof typeof eventTypeConfig]?.color || '#6b7280';
+    if (eventTypeConfig[type as keyof typeof eventTypeConfig]) {
+      return eventTypeConfig[type as keyof typeof eventTypeConfig].color;
+    }
+    // 如果类型不在预定义中，使用其他类型的颜色
+    return '#64748b';
   };
 
   // 获取事件子类型标签
@@ -430,13 +667,14 @@
 
   // 获取规则卡片样式类
   const getRuleCardClass = (type: string) => {
-    return `rule-card-${type.toLowerCase()}`;
-  };
-
-  // 切换规则状态
-  const toggleRuleStatus = (index: number) => {
-    rulesData.value[index].active = !rulesData.value[index].active;
-    message.success(rulesData.value[index].active ? '规则已启用' : '规则已停用');
+    const normalizedType = type.toLowerCase();
+    // 检查类型是否在预定义的类型中（不区分大小写）
+    const typeKeys = Object.keys(eventTypeConfig).map(key => key.toLowerCase());
+    if (typeKeys.includes(normalizedType)) {
+      return `rule-card-${normalizedType}`;
+    }
+    // 未知类型使用其他类型的样式
+    return 'rule-card-other';
   };
 
   // 查看规则详情
@@ -444,6 +682,203 @@
     selectedRule.value = rule;
     showDetailModal.value = true;
   };
+
+  // 编辑规则
+const editRule = (rule: MonitoringRule | null = null) => {
+  if (rule) {
+    // 编辑现有规则
+    selectedRule.value = rule;
+    isEditing.value = true;
+    
+    // 确保表单数据完全覆盖
+    editForm.value = {
+      event_type: rule.event_type || '',
+      event_subtype: rule.event_subtype || '',
+      event_description: rule.event_description || '',
+      related_stock: rule.related_stock || '',
+      trigger_condition: rule.trigger_condition || '',
+      active: rule.active ?? true,
+      trigger_threshold: (rule as any).trigger_threshold ?? 5,
+      notification_methods: (rule as any).notification_methods ?? ['app'],
+      monitoring_frequency: (rule as any).monitoring_frequency ?? 'realtime'
+    };
+  } else {
+    // 创建新规则
+    selectedRule.value = null;
+    isEditing.value = false;
+    editForm.value = {
+      event_type: '',
+      event_subtype: '',
+      event_description: '',
+      related_stock: '',
+      trigger_condition: '',
+      active: true,
+      trigger_threshold: 5,
+      notification_methods: ['app'],
+      monitoring_frequency: 'realtime'
+    };
+  }
+  
+  // 如果有表单引用，重置验证状态
+  if (editFormRef.value) {
+    editFormRef.value.restoreValidation();
+  }
+  
+  showDetailModal.value = false;
+  showEditModal.value = true;
+};
+
+  // 保存规则
+const saveRule = async () => {
+  if (!editFormRef.value) return;
+  
+  try {
+    // 表单验证
+    await editFormRef.value.validate();
+    saving.value = true;
+
+    // 模拟延迟，让用户看到保存过程
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    if (isEditing.value && selectedRule.value) {
+      // 编辑现有规则 - 在本地数据中更新
+      const index = rulesData.value.findIndex(rule => 
+        rule.event_type === selectedRule.value!.event_type &&
+        rule.event_subtype === selectedRule.value!.event_subtype &&
+        rule.related_stock === selectedRule.value!.related_stock
+      );
+      
+      if (index !== -1) {
+        // 保留原有的一些字段，只更新表单中的字段
+        rulesData.value[index] = {
+          ...rulesData.value[index],
+          event_type: editForm.value.event_type,
+          event_subtype: editForm.value.event_subtype,
+          event_description: editForm.value.event_description,
+          related_stock: editForm.value.related_stock,
+          trigger_condition: editForm.value.trigger_condition,
+          active: editForm.value.active
+        };
+        message.success('规则更新成功（本地模拟）');
+      } else {
+        // 如果没有找到对应的规则，作为新规则添加
+        const newRule: MonitoringRule = {
+          event_description: editForm.value.event_description,
+          event_subtype: editForm.value.event_subtype,
+          event_type: editForm.value.event_type,
+          related_stock: editForm.value.related_stock,
+          trigger_condition: editForm.value.trigger_condition,
+          active: editForm.value.active,
+          trigger_count: selectedRule.value.trigger_count || 0,
+          last_triggered: selectedRule.value.last_triggered || null,
+          created_at: selectedRule.value.created_at || new Date().toLocaleDateString()
+        };
+        rulesData.value.unshift(newRule);
+        message.success('规则已更新');
+      }
+      
+      // 以下是实际API调用的代码（已注释，保留供参考）
+      /*
+      // 获取用户token
+      const token = userStore.getToken;
+      
+      if (!token) {
+        message.error('用户未登录或token已失效');
+        saving.value = false;
+        return;
+      }
+
+      // 准备API参数
+      const apiParams = {
+        event_type: editForm.value.event_type,
+        event_subtype: editForm.value.event_subtype,
+        related_stock: editForm.value.related_stock,
+        event_description: editForm.value.event_description,
+        trigger_condition: editForm.value.trigger_condition
+      };
+
+      // 实际API调用
+      const response = await updateRules(token, apiParams);
+      
+      if (response && response.code === 0) {
+        message.success('规则更新成功');
+      } else {
+        throw new Error(response?.message || '更新规则失败');
+      }
+      */
+    } else {
+      // 创建新规则 - 添加到本地数据
+      const newRule: MonitoringRule = {
+        event_description: editForm.value.event_description,
+        event_subtype: editForm.value.event_subtype,
+        event_type: editForm.value.event_type,
+        related_stock: editForm.value.related_stock,
+        trigger_condition: editForm.value.trigger_condition,
+        active: editForm.value.active,
+        trigger_count: 0,
+        last_triggered: null,
+        created_at: new Date().toLocaleDateString()
+      };
+
+      // 添加到本地数据
+      rulesData.value.unshift(newRule);
+      message.success('规则创建成功（本地模拟）');
+      
+      // 可选：显示API调用提示
+      message.info('实际环境中将调用创建规则API');
+      
+      // 以下是实际API调用的代码（已注释，保留供参考）
+      /*
+      // 这里可以调用创建规则的API
+      // 例如：await createRule(token, apiParams);
+      // 然后重新获取数据或直接添加返回的数据
+      */
+    }
+
+    
+    // 关闭模态框
+    showEditModal.value = false;
+    
+  } catch (errors: any) {
+    console.error('保存失败:', errors);
+    
+    // 显示错误信息
+    if (errors.message) {
+      message.error(errors.message);
+    } else if (Array.isArray(errors)) {
+      // 表单验证错误
+      message.error('请检查表单输入');
+    } else {
+      message.error('操作失败，请重试');
+    }
+  } finally {
+    saving.value = false;
+  }
+};
+
+  // 切换规则状态
+const toggleRuleStatus = (index: number) => {
+  rulesData.value[index].active = !rulesData.value[index].active;
+  const action = rulesData.value[index].active ? '启用' : '停用';
+  message.success(`规则已${action}（本地模拟）`);
+  
+  
+  // 以下是实际API调用的代码（已注释，保留供参考）
+  /*
+  const token = userStore.getToken;
+  if (token) {
+    const apiParams = {
+      event_type: rulesData.value[index].event_type,
+      event_subtype: rulesData.value[index].event_subtype,
+      related_stock: rulesData.value[index].related_stock,
+      active: rulesData.value[index].active
+    };
+    // 调用API更新规则状态
+    // await updateRuleStatus(token, apiParams);
+    message.success(`规则已${action}`);
+  }
+  */
+};
 
   // 模拟数据（备用）
   const mockRulesData: MonitoringRule[] = [
@@ -671,6 +1106,16 @@
     }
   };
 
+  // 检测是否需要显示滚动提示
+  watch(ruleTypeStats, (newStats) => {
+    // 如果规则类型超过5个，显示滚动提示
+    if (newStats.length > 5) {
+      showScrollHint.value = true;
+    } else {
+      showScrollHint.value = false;
+    }
+  }, { immediate: true });
+
   onMounted(() => {
     fetchRules();
   });
@@ -748,46 +1193,150 @@
 .rules-summary {
   padding: 20px 28px;
   border-bottom: 1px solid #eef1f4;
+  position: relative;
+  overflow: hidden;
 
-  .summary-card {
-    border-radius: 12px;
-    min-width: 180px;
+  // 滚动容器
+  .summary-scroll-container {
+    position: relative;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 12px;
+    -webkit-overflow-scrolling: touch;
+    
+    // 隐藏默认滚动条，使用自定义样式
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+    
+    // Chrome/Safari/Edge 自定义滚动条样式
+    &::-webkit-scrollbar {
+      height: 4px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 2px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 2px;
+      
+      &:hover {
+        background: #94a3b8;
+      }
+    }
+
+    // 滚动内容区域
+    .summary-scroll-content {
+      display: inline-flex; // 使用inline-flex防止换行
+      gap: 24px;
+      padding-right: 40px; // 为滚动提示留出空间
+      min-width: min-content; // 确保内容不被压缩
+      white-space: nowrap; // 防止卡片换行
+    }
+
+    // 滚动提示
+    .scroll-hint {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+      animation: bounceHint 2s infinite;
+      pointer-events: none;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 8px;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      z-index: 2;
+    }
+  }
+
+  // 紧凑卡片样式
+  .summary-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: white;
+    border: 1px solid #eef1f4;
+    border-radius: 10px;
+    min-width: 140px;
     transition: all 0.3s ease;
+    flex-shrink: 0;
+    cursor: default;
+    position: relative;
+    overflow: hidden;
+    
+    // 左侧装饰线
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--type-color, #3b82f6);
+      opacity: 0.8;
+    }
 
     &:hover {
       transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+      border-color: transparent;
+      
+      .summary-item-icon {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
     }
 
-    .summary-card-content {
+    .summary-item-icon {
+      width: 40px;
+      height: 40px;
       display: flex;
       align-items: center;
-      gap: 16px;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--type-color, #3b82f6) 0%, var(--type-color, #3b82f6) 100%);
+      background: linear-gradient(135deg, 
+        rgba(var(--type-color-rgb, 59, 130, 246), 0.1) 0%, 
+        rgba(var(--type-color-rgb, 59, 130, 246), 0.2) 100%);
+      border-radius: 10px;
+      color: var(--type-color, #3b82f6);
+      transition: all 0.3s ease;
+      border: 1px solid rgba(var(--type-color-rgb, 59, 130, 246), 0.1);
+    }
 
-      .summary-icon {
-        width: 48px;
-        height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 12px;
-        transition: all 0.3s ease;
+    .summary-item-info {
+      .summary-item-count {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1;
+        margin-bottom: 4px;
       }
 
-      .summary-info {
-        .summary-count {
-          font-size: 24px;
-          font-weight: 700;
-          color: #1e293b;
-          line-height: 1;
-        }
-
-        .summary-label {
-          font-size: 14px;
-          color: #64748b;
-          margin-top: 4px;
-        }
+      .summary-item-label {
+        font-size: 13px;
+        color: #64748b;
+        font-weight: 500;
+        white-space: nowrap;
       }
     }
+  }
+}
+
+// 滚动提示动画
+@keyframes bounceHint {
+  0%, 100% {
+    transform: translateY(-50%) translateX(0);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-50%) translateX(-4px);
+    opacity: 1;
   }
 }
 
@@ -883,6 +1432,11 @@
     --type-color-light: #5eead4;
   }
 
+  &.rule-card-other::before {
+    --type-color: #64748b;
+    --type-color-light: #cbd5e1;
+  }
+
   &:hover {
     transform: translateY(-4px);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
@@ -904,6 +1458,21 @@
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+
+    .rule-actions {
+      display: flex;
+      gap: 4px;
+      
+      :deep(.n-button) {
+        padding: 4px;
+        min-width: 24px;
+        height: 24px;
+        
+        &:hover {
+          background: #f1f5f9;
+        }
+      }
     }
   }
 
@@ -1013,6 +1582,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px;
+    margin-bottom: 24px;
 
     .detail-item {
       .detail-item-label {
@@ -1036,67 +1606,120 @@
       }
     }
   }
+
+  .detail-actions {
+    padding-top: 20px;
+    border-top: 1px solid #eef1f4;
+  }
 }
 
+// 编辑表单样式
+:deep(.n-form-item) {
+  margin-bottom: 20px;
+}
+
+:deep(.n-form-item-label) {
+  font-weight: 500;
+  color: #475569;
+}
+
+:deep(.n-input) {
+  border-radius: 8px;
+}
+
+:deep(.n-select) {
+  border-radius: 8px;
+}
+
+:deep(.n-switch) {
+  --n-rail-color-active: #10b981;
+}
+
+// 响应式设计
 @media (max-width: 768px) {
-  .monitoring-rules-container {
-    padding: 16px;
-  }
-
-  .rules-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
-    padding: 20px;
-
-    .header-stats {
-      display: flex;
-      justify-content: space-between;
-    }
-  }
-
   .rules-summary {
     padding: 16px;
-
-    :deep(.n-space) {
-      flex-wrap: wrap !important;
+    
+    .summary-scroll-container {
+      padding-bottom: 10px;
+      
+      .summary-scroll-content {
+        gap: 12px;
+      }
     }
 
-    .summary-card {
-      min-width: calc(50% - 12px);
+    .summary-item {
+      padding: 10px 14px;
+      min-width: 120px;
+      gap: 10px;
+      
+      .summary-item-icon {
+        width: 36px;
+        height: 36px;
+      }
+      
+      .summary-item-info {
+        .summary-item-count {
+          font-size: 18px;
+        }
+        
+        .summary-item-label {
+          font-size: 12px;
+        }
+      }
     }
   }
 
-  .rules-list {
-    padding: 16px;
-
-    .list-header {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 16px;
-    }
-
-    .rules-grid {
-      grid-template-columns: 1fr;
-    }
+  .rules-grid {
+    grid-template-columns: 1fr !important;
   }
 
-  .rule-card {
-    margin-bottom: 16px;
+  :deep(.n-grid) {
+    grid-template-columns: 1fr !important;
   }
 }
 
 @media (max-width: 480px) {
-  .monitoring-rules-container {
-    padding: 12px;
+  .rules-summary {
+    .summary-item {
+      min-width: 110px;
+      padding: 8px 12px;
+      
+      .summary-item-icon {
+        width: 32px;
+        height: 32px;
+        
+        .n-icon {
+          size: 16px;
+        }
+      }
+      
+      .summary-item-info {
+        .summary-item-count {
+          font-size: 16px;
+        }
+        
+        .summary-item-label {
+          font-size: 11px;
+        }
+      }
+    }
+    
+    .scroll-hint {
+      display: none;
+    }
   }
 
-  .rules-card {
-    border-radius: 12px;
+  .rules-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
   }
 
-  .summary-card {
-    min-width: 100% !important;
+  .list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
 }
 </style>

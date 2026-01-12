@@ -139,6 +139,21 @@ export async function getRule(token: string) {
   return await requestAPI('/api/user/rules', 'get', genRequestHeaders(token), null);
 }
 
+interface UpdateRulesParams {
+  event_type: string;
+  event_subtype: string;
+  related_stock: string;
+  event_description: string;
+  trigger_condition: string;
+}
+
+/**
+ * @description 更新盯盘规则
+ */
+export async function updateRules(token: string, params: UpdateRulesParams) {
+  return await requestAPI('/api/user/update/user_rules', 'post', genRequestHeaders(token), params);
+}
+
 interface UpdateUserBaseInfoParams {
   name: string;
   old_password?: string;

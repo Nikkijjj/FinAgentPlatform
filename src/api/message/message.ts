@@ -72,6 +72,27 @@ export async function fetchMessage_Mood() {
   return await requestAPI('/api/message/trading', 'get');
 }
 
+// 新的统一查询接口
+export interface FetchAllEventsParams {
+  page: number; // 当前页
+  size: number; // 每页数量
+  stock_code?: string; // 相关个股/标的 模糊匹配 (symbol字段)
+  keyword?: string; // 关键字 全局模糊搜索
+  start_time?: string; // 事件开始时间 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss
+  end_time?: string; // 事件结束时间 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss
+  event_type?: string; // 事件类型精准筛选 (如macro，不传查所有类型)
+  sort_field?: string; // 排序字段(任意列名)，默认:event_time
+  sort_order?: 1 | -1; // 排序方式 1=正序  -1=倒序，默认:-1(最新在前)
+}
+
+/**
+ *@description 查询全部事件类型的事件列表
+ */
+export async function fetchAllEvents(params: FetchAllEventsParams) {
+  return await requestAPI('/api/message/list_all', 'post', {}, params);
+}
+
+
 export const cleanMarkdown = (content: string) => {
   if (!content) return '';
 

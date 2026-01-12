@@ -88,7 +88,7 @@
           @update:page-size="handlePageChange(1)"
           show-quick-jumper
           show-size-picker
-          :page-sizes="[5, 10, 20]"
+          :page-sizes="[12, 24]"
           v-model:page-size="pageSize"
         />
       </div>
@@ -138,7 +138,7 @@
 
   // 响应式数据
   const messages = ref<StockNews[]>([]);
-  const pageSize = ref(10);
+  const pageSize = ref(12);
   const dateRange = ref<[number, number] | null>(null);
   const currentPage = ref(1);
   const showModal = ref(false);
