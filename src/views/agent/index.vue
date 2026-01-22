@@ -80,8 +80,8 @@
         </div>
       </div>
 
-      <!-- 可调整大小的输入框区域 -->
-      <div class="chat-input-area">
+      <!-- 普通模式输入框区域 -->
+      <div class="chat-input-area" v-if="!activeAgent || activeAgent.value == ''">
         <div class="input-container">
           <n-input
             v-model:value="userInput"
@@ -97,6 +97,64 @@
             type="primary"
             class="send-button"
             :disabled="!userInput || isLoading"
+            @click="handleSendMessage"
+            :loading="isLoading"
+          >
+            <template #icon>
+              <n-icon>
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                </svg>
+              </n-icon>
+            </template>
+          </n-button>
+        </div>
+      </div>
+
+      <!-- agent模式输入框区域 -->
+      <div class="chat-input-area" v-else>
+        <div class="input-container">
+          <n-flex vertical class="input-group">
+            <div>{{ userInput_up }}</div>
+            <n-input-group :style="{ gap: '5px' }">
+              <n-input-group-label
+                :style="{ background: 'white', color: 'blue', fontWeight: 'bold' }"
+                :bordered="false"
+                >股票代码</n-input-group-label
+              >
+              <n-input
+                v-model:value="userInput_stock_code"
+                placeholder="[请在此处填写股票代码，如AAPL、TSLA、00700.HK、000001等 - 必需]"
+                :bordered="false"
+                :style="{ background: 'white' }"
+                :input-props="{ style: { color: 'black' } }"
+                :disabled="isLoading"
+                @keydown.enter.prevent="handleSendMessage"
+              />
+            </n-input-group>
+            <n-input-group :style="{ gap: '5px' }">
+              <n-input-group-label
+                :style="{ background: 'white', color: 'blue', fontWeight: 'bold' }"
+                :bordered="false"
+                >输入问题</n-input-group-label
+              >
+              <n-input
+                v-model:value="userInput_problem"
+                placeholder="[请在此处输入您的具体问题或关注点]"
+                type="textarea"
+                :bordered="false"
+                :style="{ background: 'white' }"
+                :input-props="{ style: { color: 'black' } }"
+                :disabled="isLoading"
+                @keydown.enter.prevent="handleSendMessage"
+              />
+            </n-input-group>
+            <div>{{ userInput_down }}</div>
+          </n-flex>
+          <n-button
+            type="primary"
+            class="send-button"
+            :disabled="!userInput_stock_code || isLoading"
             @click="handleSendMessage"
             :loading="isLoading"
           >
@@ -212,6 +270,10 @@
   // 响应式数据
   const activeAgent = ref<string>('');
   const userInput = ref<string>('');
+  const userInput_up = ref<string>('');
+  const userInput_down = ref<string>('');
+  const userInput_stock_code = ref<string>('');
+  const userInput_problem = ref<string>('');
   const messages = ref<Array<{ type: string; content: string; isTemplate?: boolean }>>([]);
   const inputHeight = ref<number>(120);
   const isResizing = ref<boolean>(false);
@@ -236,26 +298,20 @@
 
   // Agent提示词模板
   const agentTemplates = {
-    market: `请分析以下市场情况并提供投资建议：
+    market: {
+      up: `请分析以下市场情况并提供投资建议：`,
+      down: `请基于以上信息，提供详细的市场分析和投资建议。`,
+    },
 
-【股票代码】: [请在此处填写股票代码，如AAPL、TSLA、00700.HK、000001等 - 必需]
-【输入问题】: [请在此处输入您的具体问题或关注点]
+    fundamental: {
+      up: `请分析以下基本面情况并提供财务分析：`,
+      down: `请基于以上信息，提供基本面分析和财务评估。`,
+    },
 
-请基于以上信息，提供详细的市场分析和投资建议。`,
-
-    fundamental: `请分析以下基本面情况并提供财务分析：
-
-【股票代码】: [请在此处填写股票代码，如AAPL、TSLA、00700.HK、000001等 - 必需]
-【输入问题】: [请在此处输入您的具体问题或关注点]
-
-请基于以上信息，提供基本面分析和财务评估。`,
-
-    media: `请协助分析或优化以下盘中分析内容：
-
-【股票代码】: [请在此处填写股票代码，如AAPL、TSLA、00700.HK、000001等 - 必需]
-【输入问题】: [请在此处输入您的具体问题或关注点]
-
-请基于以上信息，提供专业、及时、客观的盘中分析。`,
+    media: {
+      up: `请协助分析或优化以下盘中分析内容：`,
+      down: `请基于以上信息，提供专业、及时、客观的盘中分析。`,
+    },
   };
 
   // 配置marked选项
@@ -288,7 +344,8 @@
       message.success(`已退出${getAgentName(agent)}模式`);
     } else {
       activeAgent.value = agent;
-      userInput.value = agentTemplates[agent as keyof typeof agentTemplates];
+      userInput_up.value = agentTemplates[agent as keyof typeof agentTemplates].up;
+      userInput_down.value = agentTemplates[agent as keyof typeof agentTemplates].down;
 
       message.success(`已切换到${getAgentName(agent)}模式`);
     }
@@ -313,6 +370,20 @@
 
   // 发送消息
   const handleSendMessage = async () => {
+    // agent模式拼接字符串
+    if (activeAgent.value != '') {
+      userInput.value =
+        userInput_up.value +
+        '\n' +
+        '股票代码：' +
+        userInput_stock_code.value +
+        '\n' +
+        '输入问题：' +
+        userInput_problem.value +
+        '\n' +
+        userInput_down.value;
+    }
+
     if (!userInput.value.trim() || isLoading.value) return;
 
     // 如果没有当前 session，创建一个新的
@@ -328,6 +399,10 @@
 
     const currentInput = userInput.value;
     userInput.value = '';
+    userInput_up.value = '';
+    userInput_down.value = '';
+    userInput_stock_code.value = '';
+    userInput_problem.value = '';
     isLoading.value = true;
 
     try {
@@ -342,8 +417,9 @@
         messages: [currentInput],
       };
 
-      const response = await callAgent(normal_params, util_params);
+      const agent_name = activeAgent.value;
       activeAgent.value = '';
+      const response = await callAgent(normal_params, util_params, agent_name);
       if (response.code === 0) {
         // 添加AI响应消息
         messages.value.push({
@@ -369,8 +445,8 @@
   };
 
   // 调用Agent
-  const callAgent = async (normal_params, util_params) => {
-    switch (activeAgent.value) {
+  const callAgent = async (normal_params, util_params, agent_name) => {
+    switch (agent_name) {
       case 'market':
         return await getMarketReply(userStore.getToken, util_params);
       case 'fundamental':
@@ -409,7 +485,7 @@
     messages.value.push({
       type: 'ai-message',
       content:
-        '您好！我是AI助手。请选择上方的Agent类型开始对话，记得在查询中填写股票代码（必需）。支持6位数字代码（如000001）或字母数字组合（如AAPL）。',
+        '您好！我是AI助手。请选择下方的Agent类型开始对话，记得在查询中填写股票代码（必需）。支持6位数字代码（如000001）或字母数字组合（如AAPL）。',
     });
     message.success('已创建新对话');
   };
@@ -510,13 +586,30 @@
       messages.value.push({
         type: 'ai-message',
         content:
-          '您好！我是AI助手。请选择上方的Agent类型开始对话，记得在查询中填写股票代码（必需）。支持6位数字代码（如000001）或字母数字组合（如AAPL）。',
+          '您好！我是AI助手。请选择下方的Agent类型开始对话，记得在查询中填写股票代码（必需）。支持6位数字代码（如000001）或字母数字组合（如AAPL）。',
       });
     }
   });
 </script>
 
 <style scoped lang="scss">
+  .input-group {
+    width: 100%;
+    gap: 0;
+    border: 1px solid lightgray;
+    border-radius: 4px;
+    transition: border-color 0.25s ease;
+    padding: 5px;
+  }
+
+  .input-group:hover {
+    border: 1px solid deepskyblue;
+  }
+
+  .input-group:focus-within {
+    border: 1px solid royalblue;
+  }
+
   .ai-assistant-container {
     max-width: 1050px;
     margin: 0 auto;
@@ -891,5 +984,10 @@
     .message .message-content {
       max-width: 90%;
     }
+  }
+
+  .new-input-area {
+    width: 100%;
+    height: 100px;
   }
 </style>
