@@ -1,9 +1,67 @@
 <template>
   <n-card class="large-card">
     <div class="container">
+      <!-- 筛选框 -->
+      <n-card class="filter" hoverable>
+        <n-flex v-if="searchExpanded" vertical justify="center">
+          <n-flex justify="space-around">
+            <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
+              <n-text :style="{ width: '20%' }">股票代码</n-text>
+              <n-input placeholder="查询股票代码" v-model:value="search_stock_code" clearable />
+            </n-flex>
+            <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
+              <n-text :style="{ width: '20%' }">报告类型</n-text>
+              <n-select
+                clearable
+                placeholder="指定报告类型"
+                :options="[
+                  { label: '投资分析', value: '投资分析' },
+                  { label: '及时提醒', value: '及时提醒' },
+                ]"
+                v-model:value="search_report_type"
+              />
+            </n-flex>
+          </n-flex>
+          <n-flex justify="space-around">
+            <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
+              <n-text :style="{ width: '20%' }">事件类型</n-text>
+              <n-select
+                clearable
+                placeholder="指定事件类型"
+                :options="[
+                  { label: '盘前分析', value: '盘前分析' },
+                  { label: '盘中分析', value: '盘中分析' },
+                  { label: '盘后分析', value: '盘后分析' },
+                ]"
+                v-model:value="search_event_type"
+              />
+            </n-flex>
+            <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
+              <n-text :style="{ width: '20%' }">日期范围</n-text>
+              <n-date-picker type="daterange" v-model:value="search_date_range" clearable />
+            </n-flex>
+          </n-flex>
+        </n-flex>
+        <template #action>
+          <n-collapse-transition :show="searchExpanded">
+            <n-flex align="center" justify="end">
+              <n-button class="search-button" size="large" @click="submitSearch">查询</n-button>
+              <n-button size="large" @click="resetSearch">重置</n-button>
+              <n-button text @click="toggleSearch">收起面板</n-button>
+            </n-flex>
+          </n-collapse-transition>
+          <n-collapse-transition :show="!searchExpanded">
+            <n-flex align="center" @click="toggleSearch">
+              <n-icon :component="SearchOutline" />
+              <n-text :style="{ color: 'lightgray' }">点击此处展开筛选...</n-text>
+            </n-flex>
+          </n-collapse-transition>
+        </template>
+      </n-card>
+
       <!-- 项目卡片网格 -->
       <n-grid :cols="24" :x-gap="20" :y-gap="10" class="scrollable-content">
-        <n-gi v-for="(item, index) in currentPageMessages" :key="index" :span="6">
+        <n-gi v-for="(item, index) in messages" :key="index" :span="6">
           <n-card class="message-card" :class="{ read: item.is_read == 'yes' }">
             <template #header>
               <div class="header">
@@ -83,9 +141,9 @@
       <div class="pagination-container">
         <n-pagination
           v-model:page="currentPage"
-          v-model:item-count="messages.length"
+          v-model:page-count="totalPages"
           @update:page="handlePageChange"
-          @update:page-size="handlePageChange(1)"
+          @update:page-size="handlePageSizeChange"
           show-quick-jumper
           show-size-picker
           :page-sizes="[12, 24]"
@@ -117,12 +175,24 @@
 
 <script lang="ts" setup>
   import { ref, computed, onMounted } from 'vue';
-  import { NCard, NGrid, NPagination, NButton, NIcon, NModal, NDatePicker, NSpace } from 'naive-ui';
+  import {
+    NCard,
+    NGrid,
+    NPagination,
+    NButton,
+    NIcon,
+    NModal,
+    NDatePicker,
+    NSpace,
+    NText,
+  } from 'naive-ui';
   import { marked } from 'marked';
   import { fetchNews, StockNews, truncateContent } from '@/api/message/message';
   import { useRouter } from 'vue-router';
   import { useUserStore } from '@/store/modules/user';
   import { useMessage } from 'naive-ui';
+  import { SearchOutline } from '@vicons/ionicons5';
+  import { onlyDate, parseStr } from '@/api/time';
   // 配置 marked 选项
   marked.setOptions({
     breaks: true,
@@ -133,13 +203,23 @@
   const userStore = useUserStore();
   const message = useMessage();
 
+  const totalPages = ref<number>(1);
+
+  // 筛选面板展开/折叠状态
+  const searchExpanded = ref(false);
+
+  // 筛选面板相关数据
+  const search_stock_code = ref<string>('');
+  const search_event_type = ref<string | null>(null);
+  const search_report_type = ref<string | null>(null);
+  const search_date_range = ref<[number, number] | null>(null);
+
   // 原始数据
   const originalMessages = ref<StockNews[]>([]);
 
   // 响应式数据
   const messages = ref<StockNews[]>([]);
   const pageSize = ref(12);
-  const dateRange = ref<[number, number] | null>(null);
   const currentPage = ref(1);
   const showModal = ref(false);
   const currentItem = ref<any>(null);
@@ -149,44 +229,15 @@
     return marked(currentItem.value.report);
   });
 
-  const currentPageMessages = computed(() => {
-    return messages.value.filter((m, index) => {
-      return (
-        index < currentPage.value * pageSize.value &&
-        index >= (currentPage.value - 1) * pageSize.value
-      );
-    });
-  });
-
-  // 方法
-  const handleDateFilter = () => {
-    if (!dateRange.value) {
-      // 重置筛选
-      messages.value = originalMessages.value;
-      currentPage.value = 1;
-      return;
-    }
-
-    const [startTimestamp, endTimestamp] = dateRange.value;
-    const startDate = new Date(startTimestamp);
-    const endDate = new Date(endTimestamp);
-    endDate.setHours(23, 59, 59);
-
-    messages.value = originalMessages.value.filter((item) => {
-      const itemDate = new Date(item.trade_date);
-      return itemDate >= startDate && itemDate <= endDate;
-    });
-    currentPage.value = 1;
-  };
-
-  const resetFilter = () => {
-    dateRange.value = null;
-    messages.value = originalMessages.value;
-    currentPage.value = 1;
-  };
-
   const handlePageChange = async (page = 1) => {
     currentPage.value = page;
+    await requestMessage(page, pageSize.value);
+  };
+
+  const handlePageSizeChange = async (size) => {
+    pageSize.value = size;
+    currentPage.value = 1;
+    await requestMessage(1, size);
   };
 
   const showDetail = (item: StockNews) => {
@@ -205,26 +256,57 @@
   };
 
   const requestMessage = async (page, size) => {
+    // 2026.01.24
+    // 补充筛选条件 stock_code, event_type, report_type, start_date, end_date
     const params = {
       page: page,
       size: size,
+      stock_code: search_stock_code.value === '' ? undefined : search_stock_code.value,
+      event_type: search_event_type.value ? search_event_type.value : undefined,
+      report_type: search_report_type.value ? search_report_type.value : undefined,
+      start_date: search_date_range.value
+        ? onlyDate(parseStr(search_date_range.value[0]))
+        : undefined,
+      end_date: search_date_range.value
+        ? onlyDate(parseStr(search_date_range.value[0]))
+        : undefined,
     };
     const messageResponse = await fetchNews(userStore.getToken, params);
     if (messageResponse.code == 0) {
-      const { pagination } = messageResponse.data;
-      for (let i = 1; i <= pagination.pages; i++) {
-        const response = await fetchNews(userStore.getToken, { page: i, size: size });
-        if (response.code == 0) {
-          const { current_data } = response.data;
-          originalMessages.value.push(...current_data);
-        } else {
-          message.error(response.msg);
-          break;
-        }
-      }
+      const { current_data, pagination } = messageResponse.data;
+      originalMessages.value = [...current_data];
+      // for (let i = 1; i <= pagination.pages; i++) {
+      //   const response = await fetchNews(userStore.getToken, { page: i, size: size });
+      //   if (response.code == 0) {
+      //     const { current_data } = response.data;
+      //     originalMessages.value.push(...current_data);
+      //   } else {
+      //     message.error(response.msg);
+      //     break;
+      //   }
+      // }
+      totalPages.value = pagination.pages;
       messages.value = [...originalMessages.value];
     } else message.error(messageResponse.msg);
   };
+
+  // 展开筛选面板
+  function toggleSearch() {
+    searchExpanded.value = !searchExpanded.value;
+  }
+
+  // 重置筛选面板
+  function resetSearch() {
+    search_stock_code.value = '';
+    search_report_type.value = null;
+    search_event_type.value = null;
+    search_date_range.value = null;
+  }
+
+  // 提交筛选数据
+  function submitSearch() {
+    requestMessage(1, pageSize.value);
+  }
 
   // 生命周期
   onMounted(async () => {
@@ -264,6 +346,13 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+  }
+
+  .filter {
+    width: 100%;
+    display: flex;
+    align-self: center;
+    background: white;
   }
 
   .large-card {

@@ -13,6 +13,7 @@
   import { useMessage } from 'naive-ui';
   import { marked } from 'marked';
   import { NAvatar, NIcon } from 'naive-ui';
+  import { CloudOfflineOutline } from '@vicons/ionicons5'
   import aiAvatarImage from '@/assets/images/AI_asis.jpg';
 
   const router = useRouter();
@@ -270,7 +271,7 @@
 </script>
 
 <template>
-  <n-card class="large-card">
+  <n-card v-if="messages.length" class="large-card">
     <div class="container">
       <n-timeline size="large">
         <n-timeline-item
@@ -457,6 +458,16 @@
       </n-timeline>
     </div>
   </n-card>
+  <n-card v-else class="empty-card">
+    <!-- 无数据 -->
+    <n-flex style="height: 100%" justify="center" align="center">
+      <n-empty size="huge" description="今日无消息">
+        <template #icon>
+          <n-icon :component="CloudOfflineOutline" />
+        </template>
+      </n-empty>
+    </n-flex>
+  </n-card>
 </template>
 
 <style scoped lang="less">
@@ -479,9 +490,14 @@
     display: flex;
     position: relative;
     height: 100%;
+    min-height: 750px;
     flex-direction: column;
     border-radius: 10px;
     overflow: hidden;
+  }
+
+  .empty-card {
+    height: 750px;
   }
 
   .container {

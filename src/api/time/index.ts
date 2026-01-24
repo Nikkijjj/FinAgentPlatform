@@ -39,4 +39,10 @@ export function parseTime(timeString: string | null): number | null {
   return result.getTime();
 }
 
-// 时间格式: "2025-11-20 22:42"
+// 时间格式: "2026-01-23 20:25:31"
+
+// 仅保留年月日
+export function onlyDate(timeString: string | null): string | null {
+  if (!timeString) return null;
+  return timeString.split(' ')[0];
+}

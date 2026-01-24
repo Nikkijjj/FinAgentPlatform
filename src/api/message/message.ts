@@ -16,6 +16,11 @@ export interface StockNews {
 interface FetchNewsParams {
   page: number; //当前页
   size: number; //数量
+  stock_code?: string;
+  event_type?: string;
+  report_type?: string;
+  start_date?: string;
+  end_date?: string;
 }
 
 /**
@@ -91,7 +96,6 @@ export interface FetchAllEventsParams {
 export async function fetchAllEvents(params: FetchAllEventsParams) {
   return await requestAPI('/api/message/list_all', 'post', {}, params);
 }
-
 
 export const cleanMarkdown = (content: string) => {
   if (!content) return '';
