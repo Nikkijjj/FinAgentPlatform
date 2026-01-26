@@ -739,17 +739,17 @@
         <n-flex v-if="searchExpanded" vertical justify="center">
           <n-flex justify="space-around">
             <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
-              <n-text :style="{ width: '20%' }">股票代码</n-text>
+              <n-text :style="{ width: '80px' }">股票代码</n-text>
               <n-input placeholder="查询股票代码" v-model:value="search_stock_code" clearable />
             </n-flex>
             <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
-              <n-text :style="{ width: '20%' }">关键字</n-text>
+              <n-text :style="{ width: '80px' }">关键字</n-text>
               <n-input placeholder="查询关键字" v-model:value="search_keyword" clearable />
             </n-flex>
           </n-flex>
           <n-flex justify="space-around">
             <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
-              <n-text :style="{ width: '20%' }">事件类型</n-text>
+              <n-text :style="{ width: '80px' }">事件类型</n-text>
               <n-select
                 clearable
                 placeholder="指定事件类型"
@@ -763,7 +763,7 @@
               />
             </n-flex>
             <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
-              <n-text :style="{ width: '20%' }">时间范围</n-text>
+              <n-text :style="{ width: '80px' }">时间范围</n-text>
               <n-date-picker type="datetimerange" v-model:value="search_time_range" clearable />
             </n-flex>
           </n-flex>
@@ -772,7 +772,7 @@
           <n-collapse-transition :show="searchExpanded">
             <n-flex align="center" justify="end">
               <n-button class="search-button" size="large" @click="submitSearch">查询</n-button>
-              <n-button size="large" @click="resetSearch">重置</n-button>
+              <n-button class="reset-button" size="large" @click="resetSearch">重置</n-button>
               <n-button text @click="toggleSearch">收起面板</n-button>
             </n-flex>
           </n-collapse-transition>
@@ -1184,6 +1184,12 @@
   // 查询按钮
   .search-button {
     background: dodgerblue;
+    color: white;
+  }
+
+  // 重置查询条件按钮
+  .reset-button {
+    background: green;
     color: white;
   }
 

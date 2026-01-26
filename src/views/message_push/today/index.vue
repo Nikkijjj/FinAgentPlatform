@@ -13,7 +13,7 @@
   import { useMessage } from 'naive-ui';
   import { marked } from 'marked';
   import { NAvatar, NIcon } from 'naive-ui';
-  import { CloudOfflineOutline } from '@vicons/ionicons5'
+  import { CloudOfflineOutline } from '@vicons/ionicons5';
   import aiAvatarImage from '@/assets/images/AI_asis.jpg';
 
   const router = useRouter();

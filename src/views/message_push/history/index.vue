@@ -6,25 +6,25 @@
         <n-flex v-if="searchExpanded" vertical justify="center">
           <n-flex justify="space-around">
             <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
-              <n-text :style="{ width: '20%' }">股票代码</n-text>
+              <n-text :style="{ width: '80px' }">股票代码</n-text>
               <n-input placeholder="查询股票代码" v-model:value="search_stock_code" clearable />
             </n-flex>
             <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
-              <n-text :style="{ width: '20%' }">报告类型</n-text>
+              <n-text :style="{ width: '80px' }">已读情况</n-text>
               <n-select
                 clearable
-                placeholder="指定报告类型"
+                placeholder="指定已读情况"
                 :options="[
-                  { label: '投资分析', value: '投资分析' },
-                  { label: '及时提醒', value: '及时提醒' },
+                  { label: '已读', value: 'yes' },
+                  { label: '未读', value: 'NO' },
                 ]"
-                v-model:value="search_report_type"
+                v-model:value="search_is_read"
               />
             </n-flex>
           </n-flex>
           <n-flex justify="space-around">
             <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
-              <n-text :style="{ width: '20%' }">事件类型</n-text>
+              <n-text :style="{ width: '80px' }">事件类型</n-text>
               <n-select
                 clearable
                 placeholder="指定事件类型"
@@ -32,12 +32,13 @@
                   { label: '盘前分析', value: '盘前分析' },
                   { label: '盘中分析', value: '盘中分析' },
                   { label: '盘后分析', value: '盘后分析' },
+                  { label: '事件提醒', value: '事件提醒' },
                 ]"
                 v-model:value="search_event_type"
               />
             </n-flex>
             <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
-              <n-text :style="{ width: '20%' }">日期范围</n-text>
+              <n-text :style="{ width: '80px' }">日期范围</n-text>
               <n-date-picker type="daterange" v-model:value="search_date_range" clearable />
             </n-flex>
           </n-flex>
@@ -46,7 +47,7 @@
           <n-collapse-transition :show="searchExpanded">
             <n-flex align="center" justify="end">
               <n-button class="search-button" size="large" @click="submitSearch">查询</n-button>
-              <n-button size="large" @click="resetSearch">重置</n-button>
+              <n-button class="reset-button" size="large" @click="resetSearch">重置</n-button>
               <n-button text @click="toggleSearch">收起面板</n-button>
             </n-flex>
           </n-collapse-transition>
@@ -183,7 +184,6 @@
     NIcon,
     NModal,
     NDatePicker,
-    NSpace,
     NText,
   } from 'naive-ui';
   import { marked } from 'marked';
@@ -211,7 +211,7 @@
   // 筛选面板相关数据
   const search_stock_code = ref<string>('');
   const search_event_type = ref<string | null>(null);
-  const search_report_type = ref<string | null>(null);
+  const search_is_read = ref<string | null>(null);
   const search_date_range = ref<[number, number] | null>(null);
 
   // 原始数据
@@ -251,10 +251,6 @@
     currentItem.value = null;
   };
 
-  const toToday = () => {
-    router.push('/message_push/today');
-  };
-
   const requestMessage = async (page, size) => {
     // 2026.01.24
     // 补充筛选条件 stock_code, event_type, report_type, start_date, end_date
@@ -263,7 +259,7 @@
       size: size,
       stock_code: search_stock_code.value === '' ? undefined : search_stock_code.value,
       event_type: search_event_type.value ? search_event_type.value : undefined,
-      report_type: search_report_type.value ? search_report_type.value : undefined,
+      is_read: search_is_read.value ? search_is_read.value : undefined,
       start_date: search_date_range.value
         ? onlyDate(parseStr(search_date_range.value[0]))
         : undefined,
@@ -287,6 +283,7 @@
       // }
       totalPages.value = pagination.pages;
       messages.value = [...originalMessages.value];
+      message.success(`已加载第${page}页数据`);
     } else message.error(messageResponse.msg);
   };
 
@@ -298,7 +295,7 @@
   // 重置筛选面板
   function resetSearch() {
     search_stock_code.value = '';
-    search_report_type.value = null;
+    search_is_read.value = null;
     search_event_type.value = null;
     search_date_range.value = null;
   }
@@ -353,6 +350,18 @@
     display: flex;
     align-self: center;
     background: white;
+  }
+
+  // 查询按钮
+  .search-button {
+    background: dodgerblue;
+    color: white;
+  }
+
+  // 重置查询条件按钮
+  .reset-button {
+    background: green;
+    color: white;
   }
 
   .large-card {
