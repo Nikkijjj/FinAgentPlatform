@@ -739,17 +739,17 @@
         <n-flex v-if="searchExpanded" vertical justify="center">
           <n-flex justify="space-around">
             <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
-              <n-text :style="{ width: '80px' }">股票代码</n-text>
+              <n-text :style="{ whiteSpace: 'nowrap' }">股票代码</n-text>
               <n-input placeholder="查询股票代码" v-model:value="search_stock_code" clearable />
             </n-flex>
             <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
-              <n-text :style="{ width: '80px' }">关键字</n-text>
+              <n-text :style="{ whiteSpace: 'nowrap' }">关键字</n-text>
               <n-input placeholder="查询关键字" v-model:value="search_keyword" clearable />
             </n-flex>
           </n-flex>
           <n-flex justify="space-around">
             <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
-              <n-text :style="{ width: '80px' }">事件类型</n-text>
+              <n-text :style="{ whiteSpace: 'nowrap' }">事件类型</n-text>
               <n-select
                 clearable
                 placeholder="指定事件类型"
@@ -763,7 +763,7 @@
               />
             </n-flex>
             <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
-              <n-text :style="{ width: '80px' }">时间范围</n-text>
+              <n-text :style="{ whiteSpace: 'nowrap' }">时间范围</n-text>
               <n-date-picker type="datetimerange" v-model:value="search_time_range" clearable />
             </n-flex>
           </n-flex>

@@ -5,12 +5,11 @@
       <n-card class="filter" hoverable>
         <n-flex v-if="searchExpanded" vertical justify="center">
           <n-flex justify="space-around">
-            <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
-              <n-text :style="{ width: '80px' }">股票代码</n-text>
+            <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center"><n-text :style="{ whiteSpace: 'nowrap' }">股票代码</n-text>
               <n-input placeholder="查询股票代码" v-model:value="search_stock_code" clearable />
             </n-flex>
             <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
-              <n-text :style="{ width: '80px' }">已读情况</n-text>
+              <n-text :style="{ whiteSpace: 'nowrap' }">已读情况</n-text>
               <n-select
                 clearable
                 placeholder="指定已读情况"
@@ -24,7 +23,7 @@
           </n-flex>
           <n-flex justify="space-around">
             <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
-              <n-text :style="{ width: '80px' }">事件类型</n-text>
+              <n-text :style="{ whiteSpace: 'nowrap' }">事件类型</n-text>
               <n-select
                 clearable
                 placeholder="指定事件类型"
@@ -38,7 +37,7 @@
               />
             </n-flex>
             <n-flex inline :wrap="false" :style="{ width: '30%' }" align="center">
-              <n-text :style="{ width: '80px' }">日期范围</n-text>
+              <n-text :style="{ whiteSpace: 'nowrap' }">日期范围</n-text>
               <n-date-picker type="daterange" v-model:value="search_date_range" clearable />
             </n-flex>
           </n-flex>
