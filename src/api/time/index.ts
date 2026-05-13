@@ -1,6 +1,6 @@
 // 获取用户本地时间
 export function getLocalDate(): string {
-  const date = new Date();
+  const date = new Date(2026, 0, 30);
   const year = date.getFullYear();
   const month = date.getMonth() + 1;
   const day = date.getDate();
