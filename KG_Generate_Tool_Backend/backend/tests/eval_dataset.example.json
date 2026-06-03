@@ -1,0 +1,42 @@
+{
+  "project_id": "your_project_id",
+  "sample_ids": [
+    "sample_id_1",
+    "sample_id_2"
+  ],
+  "gold": {
+    "nodes": [
+      {
+        "type": "entity",
+        "value": "渤海化学"
+      },
+      {
+        "type": "entity",
+        "value": "石油加工贸易板块"
+      }
+    ],
+    "edges": [
+      {
+        "from_value": "渤海化学",
+        "to_value": "石油加工贸易板块",
+        "type": "所属行业"
+      }
+    ]
+  },
+  "qa_cases": [
+    {
+      "query": "石油加工贸易板块近期龙头股是谁？",
+      "expected_terms": [
+        "渤海化学",
+        "龙头"
+      ]
+    },
+    {
+      "query": "该板块近期走势如何？",
+      "expected_terms": [
+        "上涨",
+        "异动"
+      ]
+    }
+  ]
+}

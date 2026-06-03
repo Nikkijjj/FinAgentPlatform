@@ -1,0 +1,34 @@
+{
+  "run_id": "master_75372133_1776533379603_3d11f45c",
+  "error": null,
+  "node_count": 13,
+  "edge_count": 9,
+  "conflict_count": 2,
+  "graph_optimization": {
+    "enabled": true,
+    "changed": false,
+    "removed_invalid_or_duplicate_edges": 0,
+    "added_isolated_repair_edges": 0,
+    "isolated_nodes_before": 0,
+    "isolated_nodes_after": 0,
+    "edge_count_before": 9,
+    "edge_count_after": 9
+  },
+  "quality_score": {
+    "overall_score": 0.6901,
+    "dimensions": {
+      "coverage": 0.4115,
+      "consistency": 0.5556,
+      "freshness": 1.0,
+      "structural": 1.0
+    },
+    "metrics": {
+      "node_count": 13,
+      "edge_count": 9,
+      "conflict_count": 2,
+      "sample_count": 4,
+      "isolated_node_ratio": 0.0,
+      "conflict_rate": 0.2222
+    }
+  }
+}

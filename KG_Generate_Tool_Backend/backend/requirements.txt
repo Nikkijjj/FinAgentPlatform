@@ -1,0 +1,7 @@
+# 若尚未安装，event_data 每日同步需要：
+APScheduler>=3.10.0
+# 一键构建 Master Agent 多协作流水线（LangGraph）
+langgraph>=0.2.0
+# 联网补强：DDGS.text() 在部分版本下优先走 Bing，国内易失败；代码已改为优先 html/lite（见 constrained_web_search）
+ddgs>=6.0.0
+lxml>=5.0.0

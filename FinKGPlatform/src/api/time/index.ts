@@ -1,0 +1,48 @@
+// 获取用户本地时间
+export function getLocalDate(): string {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+// 时间戳转字符串
+export function parseStr(timeStamp: number | null): string {
+  if (!timeStamp) return '';
+  const date = new Date(timeStamp);
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hour = date.getHours();
+  const min = date.getMinutes();
+  const sec = date.getSeconds();
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} ${String(
+    hour
+  ).padStart(2, '0')}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+// 字符串转时间戳
+export function parseTime(timeString: string | null): number | null {
+  if (!timeString) return null;
+  const [date, time] = timeString.split(' ');
+  const [year, month, day] = date.split('-');
+  const [hour, min, sec] = time.split(':');
+  const result = new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(min),
+    Number(sec)
+  );
+  return result.getTime();
+}
+
+// 时间格式: "2026-01-23 20:25:31"
+
+// 仅保留年月日
+export function onlyDate(timeString: string | null): string | null {
+  if (!timeString) return null;
+  return timeString.split(' ')[0];
+}
